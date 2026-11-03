@@ -1,0 +1,48 @@
+{
+  "name": "@masia/messenger",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "The open Masia messenger: end-to-end encrypted chats on MLS, a client state core and a UI core that talk to their host only through the ports in @masia/contracts.",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contacts": "./src/contacts/index.ts",
+    "./protocol": "./src/protocol/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./ui": "./src/ui/index.ts",
+    "./mls": "./src/mls/index.ts",
+    "./bundler/optional-peers": "./bundler/optional-peers.mjs"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:interop": "node src/mls/__tests__/interop/run-interop.mjs",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "docs:check": "node scripts/docs-check.mjs",
+    "bench:webkit": "node bench/webkit/run-webkit.mjs"
+  },
+  "dependencies": {
+    "@masia/contracts": "workspace:*",
+    "@noble/ciphers": "2.1.1",
+    "@noble/hashes": "2.3.0",
+    "ts-mls": "1.6.4"
+  },
+  "peerDependencies": {
+    "@mantine/core": ">=7.16",
+    "@mantine/hooks": ">=7.16",
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@mantine/core": "^7.16.0",
+    "@mantine/hooks": "^7.16.0",
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

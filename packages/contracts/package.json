@@ -1,0 +1,35 @@
+{
+  "name": "@masia/contracts",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "The ports of the open Masia messenger: the only surface the messenger and the relay share with a host application, plus in-memory fakes and the contract test suites that prove an implementation honours each port.",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fakes": "./src/fakes/index.ts",
+    "./contract-tests": "./src/contract-tests/index.ts",
+    "./wire": "./src/wire/index.ts",
+    "./wire/relay-api": "./src/wire/relay-api.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "vitest": ">=2.1.8"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

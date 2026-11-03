@@ -1,0 +1,34 @@
+{
+  "what": "RFC 9420 test vectors, cipher suite 1 only (MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519)",
+  "source": "mlswg/mls-implementations, directory test-vectors (specification: test-vectors.md in that repository)",
+  "fetchedVia": "https://cdn.jsdelivr.net/gh/mlswg/mls-implementations@main/test-vectors/<name>.json",
+  "fetchedOn": "2026-10-10",
+  "note": "tree-math has no cipher suite and is kept whole. The others are filtered by cipher_suite === 1; entries are otherwise untouched (values byte-for-byte; the files are only re-indented by the repository formatter). sourceSha256 is the hash of the file as fetched, so the source can be checked against it.",
+  "files": {
+    "tree-math.json": {
+      "sourceSha256": "27f04891f56106593b74b674445f01b845e173953770c084deb2f8cf5592e2fc",
+      "vectorsInSource": 10,
+      "vectorsKept": 10
+    },
+    "crypto-basics.json": {
+      "sourceSha256": "17cfcf89af9f51d0f2aa7af77f6f9ec99376a039214b6d42a6f11646b83e8c29",
+      "vectorsInSource": 7,
+      "vectorsKept": 1
+    },
+    "secret-tree.json": {
+      "sourceSha256": "08f92e6272452e2c832e32d38e16cf0c4aa28967e47d3842c60bc354c6b67a94",
+      "vectorsInSource": 21,
+      "vectorsKept": 3
+    },
+    "key-schedule.json": {
+      "sourceSha256": "05aa9a68bd2538ace72d8c53375984cc728ef62220ebf314df675708546d97a7",
+      "vectorsInSource": 7,
+      "vectorsKept": 1
+    },
+    "message-protection.json": {
+      "sourceSha256": "f7c1ae62ce63c3003e526d539c99f2b1444f65ee0a487d3a5667d46867526c45",
+      "vectorsInSource": 7,
+      "vectorsKept": 1
+    }
+  }
+}

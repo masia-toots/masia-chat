@@ -1,0 +1,98 @@
+name: CI
+
+# Every change must pass the same gates, and a pull request is green only when all of them are. The Node
+# version is read from `.nvmrc` and the pnpm version from `package.json` (`packageManager`), so this file
+# retypes neither.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Typecheck, test, boundary, docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # The relay's database suites run against this one, and RELAY_TEST_REQUIRE_DB makes an unreachable
+    # database a failure instead of a skip. The suites empty every table, so the database name must end
+    # in `_test` (the harness refuses any other).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: relay
+          POSTGRES_PASSWORD: relay
+          POSTGRES_DB: relay_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U relay -d relay_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      RELAY_TEST_DATABASE_URL: postgresql://relay:relay@localhost:5432/relay_test
+      RELAY_TEST_REQUIRE_DB: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test (unit and contract suites of every package)
+        run: pnpm test
+
+      - name: Boundary (the client and the relay import only the contracts; the playground only the packages)
+        run: pnpm boundary
+
+      - name: Docs (every link and anchor resolves)
+        run: pnpm docs:check
+
+      - name: Forbidden tokens (nothing private in what is published)
+        run: pnpm forbidden-tokens
+
+  # A secret in the tree or anywhere in the history fails the build. gitleaks runs from its own image (the
+  # action asks organisations for a licence key); `.gitleaks.toml` starts from its default rules and allows
+  # only the public test vectors and throwaway test keys it names, each with its reason.
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout (the whole history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan the tree and its history
+        run: >-
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2
+          detect --source /repo --config /repo/.gitleaks.toml --redact --verbose --no-banner

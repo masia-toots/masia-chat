@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      The strict policy the web build is meant to ship with: same-origin scripts only, no
+      'unsafe-eval', no 'wasm-unsafe-eval', no inline scripts. Any violation during an engine
+      phase fails the run (see main.ts). Keep this the first thing in <head>.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MLS engine bench</title>
+  </head>
+  <body>
+    <main>
+      <h1>MLS engine bench</h1>
+      <p id="status" class="status">starting</p>
+      <div id="report"></div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

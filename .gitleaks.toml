@@ -1,0 +1,25 @@
+# The secret scan CI runs over the tree and its history (`.github/workflows/ci.yml`, job `secrets`).
+# It starts from gitleaks' own rules and allows ONLY the files below. Each is a public test vector or a
+# throwaway key generated for a test, and none of them protects anything. A new entry needs the same
+# reason, written next to it; a real credential is never "allowed", it is rotated.
+
+title = "open messenger secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public test vectors and throwaway test keys"
+paths = [
+  # The RFC 9420 (MLS) interoperability vectors, published by the working group: keys, secrets and
+  # ciphertexts that exist to be reproduced by every implementation.
+  '''^packages/messenger/.+/fixtures/rfc9420/''',
+  # A signed device list: the keys in it are PUBLIC keys (and a signature over public data).
+  '''^apps/relay/src/__tests__/fixtures/device-list-v1\.ts$''',
+  # The relay's and the interop suite's test harnesses: throwaway key pairs derived from a fixed seed
+  # or generated per run, and test placeholders in the shape of a key.
+  '''^apps/relay/src/__tests__/support/harness\.ts$''',
+  '''^packages/messenger/src/mls/__tests__/interop/harness\.ts$''',
+  # RFC 8032 (Ed25519) and RFC 7748 (X25519) public test vectors, used to check the WebKit curve code.
+  '''^packages/messenger/bench/webkit/curves\.ts$''',
+]

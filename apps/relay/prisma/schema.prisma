@@ -1,0 +1,247 @@
+// The open Masia relay's OWN database (ADR-161, decision Г2=B): a separate Postgres database and a
+// separate schema from the host application. Nothing here references a host table.
+//
+// Prisma owns the SHAPE and the migrations (`prisma/migrations`); the server reads and writes it
+// with plain SQL through `pg` (apps/relay/src/store), because the open-messenger boundary forbids
+// any import of `@prisma/client`. Column names are snake_case via @map so that SQL is readable.
+//
+// THERE IS NO PLAINTEXT COLUMN, BY CONSTRUCTION. The relay stores keys, ordering and ciphertext;
+// a message body has nowhere to live. `schema.test.ts` fails the build if one is ever added.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("RELAY_DATABASE_URL")
+}
+
+/// What a device is to a room (ADR-117 §2, §3, §4). The role is also in the signed DeviceList.
+enum DeviceRole {
+  USER
+  GUARDIAN
+  ASSISTANT
+
+  @@map("device_role")
+}
+
+/// The MLS handshake messages the relay orders. Only COMMIT moves the epoch.
+/// There is no GROUP_INFO: it exists for external joins, which phase 1 does not use, and a GroupInfo
+/// readable by every member is a surface nothing needs (security review 2026-10-10 §2).
+/// There is no PROPOSAL: the engine commits proposals inline and refuses a standalone one (review
+/// round 1, 2026-10-10).
+enum HandshakeKind {
+  COMMIT
+  WELCOME
+
+  @@map("handshake_kind")
+}
+
+/// ADR-117 §2: a first-class device, one per install. `id` is minted by the client and is stable
+/// for the life of the install. A session token is never the anchor: tokens rotate, leaves must not.
+model Device {
+  id              String     @id
+  userId          String     @map("user_id")
+  role            DeviceRole @default(USER)
+  name            String?
+  platform        String?
+  identityKeyPub  Bytes      @map("identity_key_pub")
+  signatureKeyPub Bytes      @map("signature_key_pub")
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSeenAt      DateTime?  @map("last_seen_at") @db.Timestamptz(3)
+  /// Set by POST /devices/:id/revoke, and only after the client has committed MLS Remove (§5a).
+  revokedAt       DateTime?  @map("revoked_at") @db.Timestamptz(3)
+
+  keyPackages    KeyPackage[]
+  keyClaims      KeyPackageClaim[]
+  memberships    RoomMember[]
+  sentHandshakes MlsHandshake[]
+  sentEnvelopes  Envelope[]
+
+  @@index([userId])
+  @@map("devices")
+}
+
+/// ADR-117 §2a: the user's device list, SIGNED BY THE USER'S IDENTITY KEY ON THE CLIENT. The relay
+/// stores it and serves it; it never signs it and cannot forge one. Its only own rule: a new
+/// version is exactly the previous one + 1. Clients verify the signature; the relay enforces the
+/// list it holds when a device is added to a room.
+model DeviceList {
+  userId      String   @id @map("user_id")
+  version     Int
+  /// Ordered `[{ id, role, signatureKey, conversationId? }]`, as the client sent it.
+  devicesJson Json     @map("devices_json")
+  signature   Bytes
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  @@map("device_lists")
+}
+
+/// Every version of a user's signed device list, append-only (R2-A2, TODO-504 (a)). A member that
+/// pinned version N reads every newer one (`GET /users/:userId/device-list/versions`) and verifies the
+/// chain. `DeviceList` above stays the CURRENT version; both are written in one transaction.
+model DeviceListVersion {
+  userId      String   @map("user_id")
+  /// >= 1, CHECK in the migration.
+  version     Int
+  /// `[{ id, role, signatureKey, conversationId? }]`, as the client sent it.
+  devicesJson Json     @map("devices_json")
+  signature   Bytes
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([userId, version])
+  @@map("device_list_versions")
+}
+
+/// ONE identity key per account (R2-A2, TODO-504 (c); R-G2, TODO-518): the key that signs its device
+/// list, pinned by the account's first USER or ASSISTANT device (the operator's key is the ASSISTANT
+/// one). Another key on a later USER or ASSISTANT device is 409 IDENTITY_KEY_CHANGED; only the explicit
+/// reset (`DELETE /users/:userId/identity-key`) releases it. GUARDIAN devices do not pin. Not a foreign
+/// key: a pin outlives devices.
+model IdentityKey {
+  userId         String   @id @map("user_id")
+  identityKeyPub Bytes    @map("identity_key_pub")
+  pinnedAt       DateTime @default(now()) @map("pinned_at") @db.Timestamptz(3)
+
+  @@map("identity_keys")
+}
+
+/// ADR-117 §2: MLS key packages. A package is claimed once (consumedAt), except the last-resort
+/// package, which is never consumed so that an exhausted pool cannot lock a device out (H6).
+/// "A last-resort package is never consumed" is a database CHECK, not a convention (see migration).
+/// A device never holds the same bytes twice: a UNIQUE INDEX on (device_id, sha256(bytes)) in the
+/// migration `key_package_dedup` (an expression index, which this schema language cannot express, so it
+/// is not declared below). A retried upload is `INSERT ... ON CONFLICT DO NOTHING`, and a package that was
+/// already handed out cannot be stored again while its consumed row is kept.
+model KeyPackage {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceId   String    @map("device_id")
+  bytes      Bytes
+  lastResort Boolean   @default(false) @map("last_resort")
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(3)
+  /// The end of the package's MLS lifetime, read from its cleartext at upload (no key needed). An
+  /// expired package is never served and is purged. Null only on packages uploaded before the
+  /// column existed.
+  notAfter   DateTime? @map("not_after") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  device Device            @relation(fields: [deviceId], references: [id])
+  claims KeyPackageClaim[]
+
+  @@index([deviceId, consumedAt])
+  @@index([notAfter])
+  @@index([consumedAt])
+  @@map("key_packages")
+}
+
+/// WHO claimed WHICH key package (security review 2026-10-10 §4, "Lying memberDelta"). `consumedAt`
+/// says a package is spent but not by whom, and a last-resort package is never spent at all. A
+/// commit that declares it ADDS a device must name the package it used, and the relay accepts the
+/// declaration only if the committer's own device claimed that package: without this record a
+/// member could declare an Add for a device nobody invited. One row per (package, claimer): a
+/// last-resort package is handed to many claimers, an ordinary one to exactly one.
+model KeyPackageClaim {
+  keyPackageId    String   @map("key_package_id") @db.Uuid
+  claimerDeviceId String   @map("claimer_device_id")
+  claimedAt       DateTime @default(now()) @map("claimed_at") @db.Timestamptz(3)
+
+  keyPackage KeyPackage @relation(fields: [keyPackageId], references: [id], onDelete: Cascade)
+  claimer    Device     @relation(fields: [claimerDeviceId], references: [id])
+
+  @@id([keyPackageId, claimerDeviceId])
+  @@index([claimerDeviceId])
+  @@map("key_package_claims")
+}
+
+/// One MLS group per conversation. `epoch` only ever moves forward, one commit at a time, inside a
+/// transaction holding the row lock (apps/relay/src/epoch-serializer.ts).
+model ConversationE2ee {
+  conversationId  String   @id @map("conversation_id")
+  groupId         Bytes    @unique @map("group_id")
+  epoch           Int
+  treeHash        Bytes    @map("tree_hash")
+  /// The last seq handed out to a handshake / an envelope of this conversation. Counters, not
+  /// MAX(seq): retention deletes old rows, and a seq must never be handed out twice.
+  handshakeSeq    Int      @default(0) @map("handshake_seq")
+  envelopeSeq     Int      @default(0) @map("envelope_seq")
+  /// The device that opened the group: a retried "open" from it gets the original answer. Null on
+  /// groups opened before the column existed.
+  creatorDeviceId String?  @map("creator_device_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  handshakes MlsHandshake[]
+  envelopes  Envelope[]
+  members    RoomMember[]
+
+  @@map("conversation_e2ee")
+}
+
+/// A handshake message, opaque to the relay. `seq` grows by one per message within a conversation,
+/// so (conversationId, seq) is a total order; `epoch` is the epoch the message was built on. Rows
+/// older than RELAY_BACKLOG_RETENTION_SECONDS are deleted by the retention job.
+model MlsHandshake {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId  String        @map("conversation_id")
+  epoch           Int
+  seq             Int
+  kind            HandshakeKind
+  senderDeviceId  String        @map("sender_device_id")
+  bytes           Bytes
+  /// The member changes the sender DECLARED beside a COMMIT, exactly as received:
+  /// `{ added: [{ deviceId, userId, role, keyPackageId }], removed: [deviceId] }`. The relay cannot
+  /// read the commit, so this is a claim; it is stored and served so that every member can compare
+  /// it with the delta they compute from the decrypted commit and reject a lie (security review
+  /// 2026-10-10 §4). Null on a WELCOME row, and on rows written before the column existed.
+  memberDeltaJson Json?         @map("member_delta_json")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  conversation ConversationE2ee @relation(fields: [conversationId], references: [conversationId], onDelete: Cascade)
+  sender       Device           @relation(fields: [senderDeviceId], references: [id])
+
+  @@unique([conversationId, epoch, seq])
+  @@unique([conversationId, seq])
+  @@index([createdAt])
+  @@map("mls_handshakes")
+}
+
+/// An application message. The relay OWNS the ciphertext (plan decision 2026-10-10) and keeps no
+/// plaintext: there is no text column here, and there must never be one. Rows older than
+/// RELAY_BACKLOG_RETENTION_SECONDS are deleted by the retention job.
+model Envelope {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String   @map("conversation_id")
+  epoch          Int
+  seq            Int
+  senderDeviceId String   @map("sender_device_id")
+  /// The sender's own id for the message, optional: a resend with the same id gets the original seq.
+  clientMsgId    String?  @map("client_msg_id")
+  ciphertext     Bytes
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  conversation ConversationE2ee @relation(fields: [conversationId], references: [conversationId], onDelete: Cascade)
+  sender       Device           @relation(fields: [senderDeviceId], references: [id])
+
+  @@unique([conversationId, seq])
+  @@unique([conversationId, senderDeviceId, clientMsgId])
+  @@index([conversationId, createdAt])
+  @@index([conversationId, epoch, seq])
+  @@index([createdAt])
+  @@map("envelopes")
+}
+
+/// The server's view of who may fetch a room's envelopes. It is derived from the member changes a
+/// committer DECLARES alongside a commit: the relay cannot read the commit, so this is metadata
+/// the clients cross-check against the MLS tree and the signed device lists (ADR-117 §2a).
+model RoomMember {
+  conversationId String @map("conversation_id")
+  deviceId       String @map("device_id")
+  /// The epoch the device became a member in (the epoch AFTER the commit that added it).
+  addedAtEpoch   Int    @map("added_at_epoch")
+  /// Set (to the epoch AFTER the removing commit) when the device leaves; null while a member.
+  removedAtEpoch Int?   @map("removed_at_epoch")
+
+  conversation ConversationE2ee @relation(fields: [conversationId], references: [conversationId], onDelete: Cascade)
+  device       Device           @relation(fields: [deviceId], references: [id])
+
+  @@id([conversationId, deviceId])
+  @@index([deviceId])
+  @@map("room_members")
+}

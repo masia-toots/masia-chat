@@ -1,0 +1,27 @@
+diff --git a/dist/src/clientState.js b/dist/src/clientState.js
+index 45af97faf0d8094090fe5fdca57ef40bb90480b2..2a13543528e91445e05d6637ef2db0c2c6c37f33 100644
+--- a/dist/src/clientState.js
++++ b/dist/src/clientState.js
+@@ -278,14 +278,19 @@ export async function validateRatchetTree(tree, groupContext, config, authServic
+                 const leafIndex = toLeafIndex(unmergedLeaf);
+                 const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length));
+                 const nodeIndex = leafToNodeIndex(leafIndex);
+-                if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(toNodeIndex(i)))
++                // RFC 9420 section 12.4.3.1: the entry is a non-blank leaf AND a descendant of this node
++                // (both, so `||`), and every non-blank intermediate node BETWEEN the leaf and this node
++                // has an entry for the leaf. Nodes above this one are not constrained: an UpdatePath from
++                // the other half of the tree resets their lists, which is legal.
++                const position = dp.indexOf(toNodeIndex(i));
++                if (tree[nodeIndex]?.nodeType !== "leaf" || position === -1)
+                     return new ValidationError("Unmerged leaf did not represent a non-blank descendant leaf node");
+-                for (const parentIdx of dp) {
++                for (const parentIdx of dp.slice(0, position)) {
+                     const dpNode = tree[parentIdx];
+                     if (dpNode !== undefined) {
+                         if (dpNode.nodeType !== "parent")
+                             return new InternalError("Expected parent node");
+-                        if (!arraysEqual(dpNode.parent.unmergedLeaves, n.parent.unmergedLeaves))
++                        if (!dpNode.parent.unmergedLeaves.includes(unmergedLeaf))
+                             return new ValidationError("non-blank intermediate node must list leaf node in its unmerged_leaves");
+                     }
+                 }

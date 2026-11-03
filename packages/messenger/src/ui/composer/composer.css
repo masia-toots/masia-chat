@@ -1,0 +1,35 @@
+/* The messenger's own composer. Colours come from the Mantine theme; the accent from the host's
+   `--msg-accent-rgb` token (set on the conversation root above). */
+.msg-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--mantine-color-dark-4);
+}
+.msg-composer__input {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  max-height: 8em;
+  font: inherit;
+  color: inherit;
+  background: var(--mantine-color-default);
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--msg-radius);
+  padding: 8px 12px;
+}
+.msg-composer__input:focus-visible { outline: 2px solid rgba(var(--msg-accent-rgb), 0.6); outline-offset: 1px; }
+.msg-composer__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--msg-accent-on);
+  background: rgb(var(--msg-accent-rgb));
+}
+.msg-composer__send:disabled { opacity: 0.4; cursor: default; }

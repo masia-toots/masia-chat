@@ -1,0 +1,7 @@
+{
+  "$comment": "The people the playground suggests when a visitor has no contacts yet (shown with a mail and a GitHub link each, only where one is filled in). Keep it equal to MAINTAINERS.md, person by person (a test checks); change both in one commit. An empty string means the person publishes no contact.",
+  "contacts": [
+    { "id": "maintainer-1", "name": "Eugene Riabchenko", "email": "mothership@masia.to", "github": "masia-toots" },
+    { "id": "maintainer-2", "name": "Галюня", "email": "", "github": "" }
+  ]
+}

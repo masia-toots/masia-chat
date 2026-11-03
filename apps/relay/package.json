@@ -1,0 +1,33 @@
+{
+  "name": "@masia/relay-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "The open Masia relay as a process: a Fastify server around @masia/relay. It delivers ciphertext and key packages; it cannot read a message.",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "test": "vitest run",
+    "lint": "eslint src scripts",
+    "typecheck": "tsc --noEmit",
+    "openapi": "tsx scripts/export-openapi.ts",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status"
+  },
+  "dependencies": {
+    "@fastify/swagger": "^9.3.0",
+    "@masia/relay": "workspace:*",
+    "fastify": "^5.1.0",
+    "jose": "^6.2.3",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/pg": "^8.23.1",
+    "prisma": "^6.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

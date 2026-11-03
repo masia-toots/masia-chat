@@ -1,0 +1,94 @@
+/**
+ * Device rows, mobile-first (the host's form-factor rule, section 1: the phone layout is the BASE, wider
+ * screens are the min-width addition; >= 44x44 touch targets).
+ *
+ * At phone width a row would otherwise squeeze the name against the button and force the sub-line
+ * to wrap into three lines. So on the narrow base the row STACKS: identity first, action under it,
+ * full-width and thumb-sized. From 480px up it is one line again.
+ */
+
+.mdev-row {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  padding: 4px 0;
+}
+
+.mdev-id {
+  /* Let the identity block shrink instead of pushing the button off the row. */
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.mdev-text {
+  min-width: 0;
+}
+
+.mdev-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  opacity: 0.75;
+}
+
+/* A long UA-derived label ("Windows · Chrome") must never widen the card. */
+.mdev-name,
+.mdev-sub {
+  overflow-wrap: anywhere;
+}
+
+.mdev-actions {
+  /* Own the wrapped line: at phone width the action gets its own full-width row so the
+     name above it keeps the whole column. */
+  flex: 1 0 100%;
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 40px; /* line up under the text column, past the 28px icon + gap */
+}
+
+.mdev-revoke {
+  /* Touch target: Mantine's compact-sm is 26px tall, so pad it up to the 44px floor. */
+  min-height: 44px;
+}
+
+.mdev-row + .mdev-row {
+  border-top: 1px solid var(--mantine-color-default-border);
+  padding-top: 10px;
+}
+
+@media (min-width: 480px) {
+  .mdev-row {
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .mdev-actions {
+    flex: 0 0 auto;
+    padding-left: 0;
+  }
+}
+
+/* ── The room's key tree on the card (К5b): marks under a name, and the read-only room section ── */
+.mdev-marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 2px;
+}
+
+.mdev-room {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.mdev-room-row {
+  align-items: flex-start;
+}

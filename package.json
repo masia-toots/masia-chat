@@ -1,0 +1,48 @@
+{
+  "name": "masia-chat",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "The open Masia messenger: end-to-end encrypted chats on MLS, the ports a host implements, a relay that cannot read a message, and a playground. Client packages Apache-2.0, the relay AGPL-3.0.",
+  "author": "Masia Toots",
+  "homepage": "https://github.com/masia-toots/masia-chat#readme",
+  "bugs": "https://github.com/masia-toots/masia-chat/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masia-toots/masia-chat.git"
+  },
+  "scripts": {
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "boundary": "depcruise --config .dependency-cruiser.cjs packages/contracts packages/messenger packages/relay apps/relay demo",
+    "docs:check": "pnpm --filter @masia/messenger docs:check",
+    "forbidden-tokens": "node packages/messenger/scripts/docs-check.mjs --all",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,css,md,yaml,yml,prisma}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,css,md,yaml,yml,prisma}\"",
+    "playground": "docker compose --project-directory demo up --build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.1",
+    "dependency-cruiser": "^17.4.3",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-react": "^7.37.3",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.2",
+    "prettier-plugin-prisma": "^5.0.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.14.2",
+  "pnpm": {
+    "patchedDependencies": {
+      "ts-mls@1.6.4": "patches/ts-mls@1.6.4.patch"
+    }
+  }
+}

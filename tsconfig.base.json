@@ -1,0 +1,15 @@
+{
+  // Shared strictness and quality flags applied everywhere.
+  // Never set environment-specific options here (module, lib, jsx, outDir).
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

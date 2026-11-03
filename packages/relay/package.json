@@ -1,0 +1,26 @@
+{
+  "name": "@masia/relay",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "The delivery logic of the open Masia relay: key-package directory, MLS epoch serialiser and ciphertext routing. It sees who talks to whom and when, never what.",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/mls-messages.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@masia/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

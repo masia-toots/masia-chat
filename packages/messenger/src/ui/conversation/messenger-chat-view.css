@@ -1,0 +1,172 @@
+/* The conversation view — styled after messenger-sidebar-mockup.html (mint-cosmic bubbles: them/me,
+   tails, sender labels, reactions). Every colour, radius and font comes from the `--msg-*` theme
+   tokens (the host's `ThemeTokens`, set inline on `.hub-mchat`) or from the Mantine theme; nothing
+   here names a host stylesheet. The sticker artwork is the host's (`RichAttachment`), so its rules
+   live with the host. */
+
+.hub-mchat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.hub-mchat-msgs {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 16px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.hub-mchat-msgs.is-empty { align-items: center; justify-content: center; }
+
+/* Messages top-align under the header (matches the mockup). */
+.hub-mchat-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hub-mchat-loading { display: flex; justify-content: center; padding: 8px; }
+
+.hub-mchat-empty { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hub-mchat-empty-art { font-size: 40px; }
+
+/* ── Rows + bubbles ─────────────────────────────────────────────────────── */
+.hub-msg-row { display: flex; align-items: flex-end; gap: 4px; max-width: 100%; }
+.hub-msg-row--own { flex-direction: row-reverse; }
+
+.hub-msg {
+  position: relative;
+  max-width: min(74%, 560px);
+  padding: 9px 13px;
+  border-radius: var(--msg-radius);
+  font-size: 14.5px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.hub-msg--other {
+  align-self: flex-start;
+  /* A raised frosted "chip" underlay on top of the section — the host's knob. */
+  background: var(--msg-bubble-other);
+  border: 1px solid var(--msg-frosted-border);
+  border-bottom-left-radius: 6px;
+}
+.hub-msg--own {
+  align-self: flex-end;
+  background: linear-gradient(180deg, var(--msg-bubble-own), var(--msg-bubble-own-deep));
+  color: var(--msg-bubble-own-fg);
+  border-bottom-right-radius: 6px;
+}
+.hub-msg--tail { margin-bottom: 6px; }
+.hub-msg--deleted { opacity: 0.6; font-style: italic; font-size: 13px; }
+.hub-msg--sticker { background: transparent !important; border: 0 !important; padding: 2px 4px; }
+
+/* Fixed-width, not per-sender (founder 2026-07-23): `--msg-sender-name-ch` is the longest name of
+   the whole contact list, passed in by the host (`senderNameCh`) and set once on `.hub-mchat`. The
+   host's base font is monospace (`--msg-font-mono`), so `ch` is an exact width, not an
+   approximation — every group-chat bubble gets the same name-row width (and so the same minimum
+   bubble width) whether the sender is "Ada" or "Christopher", instead of the bubble
+   narrowing/widening per message. */
+.hub-msg-sender {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mantine-color-cyan-4);
+  margin-bottom: 3px;
+  width: calc(var(--msg-sender-name-ch, 0) * 1ch);
+}
+
+.hub-msg-reply {
+  display: flex; flex-direction: column; gap: 1px;
+  border-left: 3px solid color-mix(in srgb, var(--mantine-color-cyan-5) 60%, transparent);
+  padding: 3px 8px; margin-bottom: 5px; border-radius: 6px;
+  background: color-mix(in srgb, var(--mantine-color-dark-8) 40%, transparent);
+}
+.hub-msg-reply-who { font-size: 11px; font-weight: 600; color: var(--mantine-color-cyan-4); }
+.hub-msg-reply-text { font-size: 12px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.hub-msg-text { white-space: pre-wrap; }
+
+/* What stands in for a sticker the host does not draw. */
+.hub-msg-sticker-placeholder { font-size: 12px; font-style: italic; opacity: 0.7; }
+
+.hub-msg-images { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.hub-msg-images img { max-width: 220px; max-height: 220px; border-radius: 12px; cursor: zoom-in; display: block; }
+
+/* A picture still on its way (the host's resolve) — holds its place so the bubble does not jump. */
+.hub-msg-image-pending {
+  display: block;
+  width: 160px;
+  max-width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  background: currentColor;
+  opacity: 0.08;
+}
+
+/* PDF/DOCX Phase 0 (2026-07-24) — the same doc chip as the assistant's bubble (the host's
+   ChatView.css), duplicated here since this component has its own stylesheet. */
+.hub-msg-images .hub-chat-doc-chip {
+  background: var(--mantine-color-default);
+  color: var(--mantine-color-default-color);
+  border: 1px solid var(--mantine-color-default-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.hub-msg-images .hub-chat-doc-chip--bubble {
+  height: 80px;
+  min-width: 64px;
+  padding: 0 10px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.hub-msg-images .hub-chat-doc-chip--bubble:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.hub-msg-meta { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-top: 3px; font-size: 10.5px; opacity: 0.65; }
+.hub-msg-edited { font-style: italic; }
+.hub-msg-check { font-size: 10.5px; }
+.hub-msg-check--read { color: var(--mantine-color-cyan-3); }
+
+.hub-msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.hub-msg-react-pill {
+  font: inherit; font-size: 12px; cursor: pointer;
+  border: 1px solid var(--msg-frosted-border); background: var(--msg-bubble-other);
+  color: inherit; border-radius: 999px; padding: 1px 7px;
+}
+.hub-msg-react-pill.is-mine { border-color: var(--mantine-color-cyan-5); background: color-mix(in srgb, var(--mantine-color-cyan-7) 30%, transparent); }
+
+/* ── Hover actions (reaction picker + copy/edit/delete) ─────────────────── */
+.hub-msg-actions { opacity: 0; transition: opacity 120ms ease; align-self: center; min-width: 44px; min-height: 44px; }
+.hub-msg-row:hover .hub-msg-actions,
+.hub-msg-actions:focus-visible,
+.hub-msg-actions[aria-expanded='true'] { opacity: 1; }
+@media (hover: none) { .hub-msg-actions { opacity: 1; } }
+.hub-react-bar { display: flex; flex-wrap: wrap; gap: 2px; padding: 4px 6px; }
+.hub-react-emoji { font: inherit; font-size: 20px; line-height: 1; cursor: pointer; background: transparent; border: 0; min-width: 44px; min-height: 44px; border-radius: 8px; }
+.hub-react-emoji:hover { background: var(--mantine-color-dark-5); }
+
+/* ── Typing indicator ───────────────────────────────────────────────────── */
+.hub-msg--typing { display: flex; gap: 4px; padding: 12px 14px; }
+.hub-typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mantine-color-cyan-4); animation: hub-typing 1.2s infinite ease-in-out; }
+.hub-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.hub-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes hub-typing { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+/* ── Editing banner ─────────────────────────────────────────────────────── */
+.hub-mchat-editing {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 14px; font-size: 12px; color: var(--mantine-color-cyan-3);
+  border-top: 1px solid var(--mantine-color-dark-4);
+  background: color-mix(in srgb, var(--mantine-color-cyan-9) 14%, transparent);
+}
+.hub-mchat-editing span { display: inline-flex; align-items: center; gap: 6px; }
+.hub-mchat-editing button { background: transparent; border: 0; color: var(--mantine-color-dimmed); cursor: pointer; font-size: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hub-typing-dot { animation: none; }
+}

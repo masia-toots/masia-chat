@@ -1,0 +1,115 @@
+# The playground: an end-to-end encrypted chat between two browser tabs, through a relay on your machine.
+#
+#   docker compose up --build        (run it in this directory)
+#   then open http://localhost:8080 in two tabs and join with two different names.
+#
+# Four services, one network, nothing published except the page:
+#   keygen    makes a token key pair into a volume, once, and exits
+#   relay-db  the relay's own Postgres, in memory
+#   relay     the open relay (apps/relay), migrated on start
+#   web       the page, a token issuer, and a same-origin door to the relay
+#
+# DEMO ONLY. Everything below that looks like a security shortcut is one, on purpose:
+#   - the web service hands a relay token to anyone who types a name (there are no accounts);
+#   - the database accepts connections from the compose network without a password and keeps nothing on disk;
+#   - the images run TypeScript through tsx and are pinned by tag, not by digest.
+# None of it belongs in a deployment. `docker compose down -v` removes the keys and the database.
+
+name: masia-playground
+
+# The relay checks every token's issuer and audience against these two names. The web service signs with
+# them. Written ONCE here, so the two services cannot disagree. They must differ.
+x-token-names: &token-names
+  RELAY_TOKEN_ISSUER: playground-web
+  RELAY_TOKEN_AUDIENCE: playground-relay
+
+x-relay-build: &relay-build
+  context: ..
+  dockerfile: demo/docker/relay.Dockerfile
+
+services:
+  keygen:
+    build: *relay-build
+    image: masia-playground-relay:local
+    user: root
+    entrypoint: ["node", "/app/demo/docker/keygen.mjs", "/keys"]
+    volumes:
+      - keys:/keys
+    restart: "no"
+
+  relay-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: relay
+      POSTGRES_DB: relay
+      # DEMO ONLY: no password. The database is reachable only from this compose network (it publishes
+      # no port) and its data lives in memory (tmpfs), so it is gone when the container stops.
+      POSTGRES_HOST_AUTH_METHOD: trust
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U relay -d relay"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  relay:
+    build: *relay-build
+    image: masia-playground-relay:local
+    depends_on:
+      keygen:
+        condition: service_completed_successfully
+      relay-db:
+        condition: service_healthy
+    environment:
+      <<: *token-names
+      NODE_ENV: production
+      RELAY_DATABASE_URL: postgresql://relay@relay-db:5432/relay
+      DEMO_TOKEN_PUBLIC_KEY_FILE: /keys/token-public.b64
+    volumes:
+      - keys:/keys:ro
+    healthcheck:
+      test: ["CMD", "node", "/app/demo/docker/healthcheck.mjs", "http://127.0.0.1:3400/health"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  web:
+    build:
+      context: ..
+      dockerfile: demo/docker/web.Dockerfile
+    image: masia-playground-web:local
+    depends_on:
+      keygen:
+        condition: service_completed_successfully
+      relay:
+        condition: service_healthy
+    environment:
+      <<: *token-names
+      DEMO_HOST: 0.0.0.0
+      DEMO_PORT: "8080"
+      DEMO_RELAY_URL: http://relay:3400
+      DEMO_TOKEN_PRIVATE_KEY_FILE: /keys/token-private.pem
+    volumes:
+      - keys:/keys:ro
+    ports:
+      # The loopback of THIS machine only: the page mints tokens for anyone who reaches it.
+      - "127.0.0.1:${DEMO_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "node", "/app/demo/docker/healthcheck.mjs", "http://127.0.0.1:8080/demo/relay-health"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 3s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  keys:

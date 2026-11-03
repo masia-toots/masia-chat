@@ -1,0 +1,326 @@
+/**
+ * channel-bank — the destination selector, as ship equipment. See `ChannelBank.tsx` for why an
+ * intercom picks its channel from a visible bank rather than a menu.
+ */
+
+/* §12 (2026-07-23): the bank sits INSIDE the chat header row. It owns no padding, no border and no
+   height of its own any more — the header line owns all three — and it is the flexible middle of
+   that line, so the tail of the row scrolls when the family outgrows the width. */
+.chbank {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+  /* К4 (2026-10-07): the bank itself no longer scrolls — only `.chbank__recent` does. The fixed part
+     (live · picker · pinned · doors) is clipped, never scrolled: a doc scroll or a scroll that hides
+     the doors is exactly what overflowed 408 vs 355 on a phone. */
+  overflow: hidden;
+  /* The plates are 44 px tall boxes with −2 px block margin (touch target, below); the clip box has
+     to be 44 as well or it would cut the hit area. Padding gives it back, margin takes it away. */
+  padding-block: 2px;
+  margin-block: -2px;
+  /* К8a: the bank is a size CONTAINER — what folds out of the row is decided by the row's OWN width
+     (§ WHAT FOLDS below), never the viewport's: the same 355 px bank sits in a 479 px rail on a
+     1440 desktop and in a phone header. */
+  container: chbank / inline-size;
+}
+
+/* THE TWO SCROLLING STRIPS — pinned and recent — are `HScroll` (packages/ui; Ш3 of plan
+   `player-wide-holo-tabs-people`, 2026-10-09): ONE component owns the scroller, the ‹ › arrows (only on the side
+   where plates are hidden), the wheel, and the edge fade — the same behaviour the holo tab strip has. Per strip:
+   · `.chbank__scroll--*` = the WRAPPER, a flex item of the row (its size policy lives here);
+   · `.chbank__pinned` / `.chbank__recent` = the SCROLLER (`HScroll`'s viewport) — the plates' flex row. The class
+     names stay on the scroller on purpose: the lazy-grow sentinel observes it and the harnesses read its
+     `scrollLeft`/`scrollWidth`. The block padding/margin pair is the focus-ring room (44 px plates, −2 px margin). */
+.chbank__scroll { min-width: 0; }
+
+/* THE PINNED SEATS: [Masia][Родина][pinned…] — fixed, never scrolls with the recent list. They may
+   shrink (and scroll inside their own box) only if a crowded pin set would otherwise push the doors
+   out; the common case is a handful of plates at natural width. */
+.chbank__scroll--pinned { flex: 0 1 auto; }
+.chbank__pinned {
+  gap: 4px;
+  padding-block: 2px;
+  margin-block: -2px;
+}
+
+/* THE RECENT SCROLLER: people AND groups, one list. It takes whatever width is left between the pinned
+   seats and the doors (`flex: 1 1 0` + `min-width: 0`), scrolls INSIDE itself (container scroll, never
+   the document; `overscroll-behavior` keeps the gesture from chaining out) and grows its rendered
+   window when its end sentinel comes into view (`ChannelBank.tsx`). */
+.chbank__scroll--recent { flex: 1 1 0; }
+.chbank__recent {
+  gap: 4px;
+  padding-block: 2px;
+  margin-block: -2px;
+}
+/* К8a — THE FLOOR: the recent row is never squeezed below TWO plates (it measured 0 px at 390 and
+   23 px in the 479 px rail after К4). The pinned group shrinks first (it scrolls in its own box);
+   anything still too wide is folded out of the row (§ WHAT FOLDS), never the recent plates. */
+.chbank__scroll--recent:has(.chbank__plate) { min-width: calc(2 * 44px + 4px); }
+/* The end-of-row sentinel: zero visual weight, but a real 1 px box so IntersectionObserver sees it. */
+.chbank__more { flex: 0 0 1px; height: 1px; }
+
+/* THE DOORS: after the recent scroller, OUTSIDE it — they never scroll away. */
+.chbank__doors {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* THE SEAT (`seatSlot`): the host's one fixed plate after the pinned seats. It is NOT in the fold list below — it stays
+   at every width — so the recent scroller's floor gives way to it, down to ONE plate, rather than the seat leaving. */
+.chbank__seat { flex: 0 0 auto; display: flex; align-items: center; }
+.chbank__seat ~ .chbank__scroll--recent:has(.chbank__plate) { min-width: calc(44px + 4px); }
+
+/* ── WHAT FOLDS, AND WHEN (К8a, 2026-10-07 — canon chat §12) ────────────────────────────────────
+   The row's FIXED parts (live · picker chip · pinned · doors ≈ 324 px with two pins) used to squeeze
+   the recent scroller to nothing. Now they leave the row in a fixed order as the BANK narrows, and
+   each stays one tap away in the header `⋯`:
+     · < 520 px bank → the DOOR folds (a shortcut: `⋯` → «Дії» → «Контакти» opens the
+                       same menu — with the same badge count, and the row is always there — with or without a chat);
+     · < 300 px bank → the conversation PICKER chip folds too (its rows move to `⋯` → «Де»; the bank
+                       reports the fold — `onConvsFoldChange` — so the owner seats them there).
+   Measured: 844×390 bank 695 → nothing folds; 479 px rail (1180 / 1440) bank 355 → doors fold;
+   390×844 bank 274 → doors and picker fold. Container-query thresholds cannot read a custom
+   property, so the two numbers live here, once.
+   Scoped `.chbank .x` on purpose: the parts' own `display` rules come LATER in this file, and an
+   equal-specificity fold would lose to them by source order (it did — the picker never folded). */
+@container chbank (max-width: 519px) {
+  .chbank .chbank__doors { display: none; }
+}
+@container chbank (max-width: 299px) {
+  .chbank .chbank__convs { display: none; }
+}
+
+/* A PLATE: the person's фішка in a berth. Rectangular on purpose — a rounded pill is a web control,
+   a plate is a piece of a panel. The 2 px corner is the only concession, so it does not look broken.
+   Since §12 it is chip-sized and nothing else: the berth is the token box plus a 1 px seat. */
+.chbank__plate {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1px;
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--msg-fg) 75%, transparent);
+  font-family: var(--msg-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.11em;                /* stencilled, not typeset */
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow 150ms ease, background 150ms ease, color 150ms ease, opacity 150ms ease;
+  opacity: 0.62;                         /* not-live channels recede; the live one is at full */
+}
+/* Touch target ≥ 44×44 WITHOUT growing the row (header height is tuned by measurement): the plate is
+   a 42 px box (40 px chip + 1 px seat), so it is floored at 44 and the 2 px of extra height is given
+   back as negative block margin — the row's own height is unchanged. */
+.chbank__plate { position: relative; min-width: 44px; min-height: 44px; margin-block: -2px; }
+.chbank__plate:hover:not(.is-locked) { opacity: 1; color: color-mix(in srgb, var(--msg-accent-fg) 95%, transparent); }
+.chbank__plate:focus-visible { outline: 2px solid rgba(var(--msg-accent-rgb), 0.75); outline-offset: 1px; }
+
+/* LIVE — the selected channel. It sits at SEAT 1, which is already the loudest statement in the row,
+   so the live mark is the FACE'S OWN RIM, brightened — not a second frame around it (founder
+   2026-08-31: a rectangular ring round a round face read as two nested frames). The plate only lifts
+   the opacity and the colour here; the rim itself belongs to the face, so a host whose faces have
+   one (the Masia hub's board chips and stone) raises it in its own stylesheet, addressed through
+   `.chbank__plate.is-live`. */
+.chbank__plate.is-live {
+  opacity: 1;
+  color: var(--msg-accent-fg);
+}
+
+/* The face — the plate's whole content since §12. Its box comes from the `--msg-chip-size` token;
+   the same token is declared HERE because a face can be a BERTH (a host slot that fills in later),
+   and a berth must hold its box whether or not anything has arrived in it. A reserved seat that
+   collapses when empty is not reserved: seat 1 would shrink to a sliver and the whole row would
+   shift as the face comes and goes. */
+.chbank__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--msg-chip-size);
+  height: var(--msg-chip-size);
+  /* A berth's occupant may be `position: absolute; inset: 0` (the hub parents its assistant's stone
+     here), so the berth must be its containing block; otherwise it would size itself against
+     whatever positioned ancestor happened to be up the tree. Harmless for an in-flow face. */
+  position: relative;
+}
+
+/* (`.chbank__title*` — the ONE title and its back-chevron — lived here between 2026-07-23 and
+   2026-08-09, while the name sat inside the bank as `titleSlot`. The founder's head re-cut moved the
+   name beside the space picker in the head's control cluster, so its styles moved with it and now
+   live in `MessengerPage.css` as `.hub-chat-name*`. One home; nothing left behind here to drift.) */
+
+/* The lamp said "live" beside a stencilled name. The name is gone from the plate and the live seat
+   is structural now (seat 1, and only the live plate is lit), so the lamp is one signal too many. */
+.chbank__lamp { display: none; }
+
+/* The stencilled label survives only as the plate's accessible name — a row of unlabelled faces
+   must still read as a row of PEOPLE to a screen reader. */
+.chbank__name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* LOCKED — present, legible, and plainly not available (canon §20C-3: the landing runs the real
+   surface with parts locked, because a control that is absent teaches that it does not exist). It
+   reads as an unpowered channel: the plate is there, the face is dimmed, a ✕ says why. */
+.chbank__plate.is-locked {
+  cursor: default;
+  opacity: 0.3;
+  color: color-mix(in srgb, var(--msg-fg) 35%, transparent);
+  box-shadow: none;
+}
+.chbank__lock { opacity: 0.5; margin-left: -8px; align-self: flex-start; }
+
+/* ── THE LIVE CONTACT'S CONVERSATION PICKER (founder 2026-09-01) ─────────────────────────────
+   «Пікер розмов з обраним контактом буде відразу після нього і буде відділяти його від інших
+   контактів.» So it is two things at once: the door to the axis «ЯКА» (which conversation with
+   THIS person — the old `⋯` «Розмови тут» and the space picker's «Інші розмови» are retired), and
+   the DIVIDER of the row — a hairline on its right is the only line the bank draws. Plate-shaped,
+   plate-coloured, nothing rounder than the plates beside it. */
+.chbank__convs {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: var(--msg-chip-size);
+  padding: 0 6px 0 5px;
+  margin-right: 6px;
+  border: 0;
+  border-right: 1px solid rgba(var(--msg-accent-rgb), 0.28);
+  border-radius: 2px 0 0 2px;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 80%, transparent);
+  font-family: var(--msg-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+.chbank__convs:hover,
+.chbank__convs.is-open { color: var(--msg-accent-fg); background: rgba(var(--msg-accent-rgb), 0.08); }
+.chbank__convs:focus-visible { outline: 2px solid rgba(var(--msg-accent-rgb), 0.75); outline-offset: 1px; }
+/* ── THE ROW'S GLYPHS COME FROM THE ICON SET (founder 2026-09-03: the row's icons were not in the
+   product's style) ───────────────────────────────────────────────────────────────────────────────
+   📌 🔒 💬 ⊕ 👥+ ▾ ✓ 📁 were seven vendors' handwriting in one 33 px row: different weights,
+   different baselines, and colour the theme could not touch (an emoji paints itself). They are all
+   icon-set glyphs now — one stencil, `currentColor`, so the plate's own colour and hover carry them.
+
+   SIZE IS A RELATION, NOT A NUMBER: every glyph is `--chbank-glyph` of its own button's font-size,
+   so the doors, the picker chip and its rows stay one family when the row's type size changes, and
+   the icon's own default size is overridden here rather than restated at each call site. These
+   glyphs wear `.chbank__ic`, the hook the rule below addresses. */
+.chbank {
+  --chbank-glyph: 1.15em;   /* the row's controls */
+  --chbank-glyph-sm: 0.85em; /* the caret + the ✓ tick: subordinate marks */
+}
+.chbank :is(.chbank__convs, .chbank__people) .chbank__ic { width: var(--chbank-glyph, 1.15em); height: var(--chbank-glyph, 1.15em); }
+.chbank__convs-glyph { flex: 0 0 auto; }
+.chbank__convs-count { font-variant-numeric: tabular-nums; }
+.chbank .chbank__convs-caret {
+  flex: 0 0 auto;
+  width: var(--chbank-glyph-sm);
+  height: var(--chbank-glyph-sm);
+  opacity: 0.7;
+}
+
+/* The picker's rows ride the host's menu slot (`name="convs"`, К8a) — glyph · name · ✓ / unread, with
+   the family space as the row's hint. The current row is `aria-current` (the ONE place the open
+   conversation's name is asserted in the list). Only the two marks the console rows don't draw are
+   styled here. */
+/* The space a conversation lives in — a NAME that stays here (the row's hint), so it is ONE line cut with «…», never a
+   second line and never a row pushed wider than its menu (founder 2026-11-03: «повна назва у три крапки»). */
+.chbank-convs__space { display: inline-flex; align-items: center; gap: 3px; max-width: 100%; min-width: 0; white-space: nowrap; }
+.chbank-convs__space-glyph { flex: 0 0 auto; opacity: 0.8; }
+.chbank-convs__space-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chbank-convs__unread {
+  min-width: 16px; padding: 0 4px; border-radius: 8px; text-align: center;
+  font-size: 10px; font-weight: 700; line-height: 16px;
+  background: rgba(var(--msg-accent-rgb), 0.85); color: var(--msg-accent-on);
+}
+
+/* ── THE DOOR — `.chbank__people` («Люди») ──────────────────────────────────────────────────────
+   Plan `player-wide-holo-tabs-people` Ш5 (founder 2026-10-08): the bank's TWO doors (Кола · Групи) became
+   ONE — they opened the same menu and differed only by the tab. It stays a BANK plate (the bank's
+   stylesheet is its home; `circle-selector.css` / `group-manager.css` keep the menu's bodies).
+
+   A PLATE, not a pill (canon §12: the bank is equipment): same height, corners and mono voice as
+   `.chbank__convs` beside it, and NO border of its own — the live contact's picker is the row's
+   one divider (canon chat, Decisions 2026-09-02) and `.chbank__sep` its one section seam. */
+.chbank__people {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;               /* ≥ 44×44 touch target; the 2 px over the chip are handed back below */
+  padding: 0 6px;
+  margin: -2px 3px;
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 72%, transparent);
+  font-family: var(--msg-font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+.chbank__people:hover, .chbank__people.is-open { color: var(--msg-accent-fg); background: rgba(var(--msg-accent-rgb), 0.08); }
+.chbank__people:focus-visible { outline: 2px solid rgba(var(--msg-accent-rgb), 0.75); outline-offset: 1px; }
+
+/* THE DOOR'S MARK: the `users` stencil (two people, no plus — founder Г1 = A) with the INCOMING-REQUEST
+   badge riding its top-right corner (hidden at 0 — the element is not rendered). Same mint as the
+   picker's unread count (`.chbank-convs__unread`), so «something waits for you» has one colour. */
+.chbank__door-glyph {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.chbank .chbank__door-glyph .chbank__door-badge {
+  position: absolute;
+  top: -0.55em;
+  right: -0.85em;
+  min-width: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+  background: rgba(var(--msg-accent-rgb), 0.95);
+  color: var(--msg-accent-on);
+}
+
+/* THE SECTION SEAM — between the PEOPLE section and the GROUPS section (founder 2026-09-03:
+   «усі групи поза колами — і вони стоять окремо»). A quiet hairline, the same weight as the
+   picker's edge, and it stands whenever the group section exists at all — an empty section still
+   has to read as a separate place, or «окремо» is a claim the row does not make. Slightly more air
+   than the plate gap on either side so the eye reads two banks, not one row with a scratch. */
+.chbank__sep { flex: 0 0 1px; height: calc(var(--msg-chip-size) - 8px); margin: 0 5px; background: rgba(var(--msg-accent-rgb), 0.22); }
+/* (59 conversations on the founder's account, 2026-09-02: the list scrolls inside the console
+   panel — `.cm-panel--pop` caps its own height; the phone gets the sheet. No local cap needed.) */
+
+@media (prefers-reduced-motion: reduce) {
+  .chbank__people { transition: none; }
+}

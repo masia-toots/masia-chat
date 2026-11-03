@@ -1,0 +1,204 @@
+/* ── The people menu bodies: «People» (`PeoplePanel`) and «Requests» (`RequestsPanel`) ──
+   They are tab bodies inside the host's contacts menu, not a modal: the menu's panel owns the frame,
+   the scroller (container scroll, never the document) and the phone sheet's safe-area padding. The
+   door plate lives in `channel-bank.css`. Colours come from the messenger theme tokens (`--msg-*`),
+   set on each panel root, so a host theme change moves this with it. */
+
+.circlesel { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.circlesel__sec { display: flex; flex-direction: column; gap: 8px; }
+
+.circlesel__h {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--msg-fg) 60%, transparent);
+}
+.circlesel__h.is-sub { margin-top: 6px; text-transform: none; letter-spacing: 0.02em; }
+.circlesel__h-n {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(var(--msg-accent-rgb), 0.16);
+  font-size: 10px;
+  text-align: center;
+}
+
+.circlesel__empty { margin: 0; font-size: 12px; color: color-mix(in srgb, var(--msg-fg) 55%, transparent); }
+
+/* The empty state with seed contacts (К10b): the sentence, then the suggested people with their links. */
+.circlesel__seed { display: flex; flex-direction: column; gap: 8px; }
+.circlesel__seed-h { margin: 4px 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: color-mix(in srgb, var(--msg-fg) 55%, transparent); }
+.circlesel__seed-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.circlesel__seed-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 44px; font-size: 14px; }
+.circlesel__seed-name { font-weight: 600; }
+.circlesel__seed-link { font-size: 12px; color: var(--msg-accent); text-decoration: underline; }
+
+/* ── 1. circles row ───────────────────────────────────────────────────────── */
+
+.circlesel__tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.circlesel__tab-wrap { display: inline-flex; align-items: stretch; }
+
+.circlesel__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px; /* form-factor § — a real tap target, not a 22px word */
+  padding: 0 12px;
+  border: 1px solid rgba(var(--msg-accent-rgb), 0.22);
+  border-radius: 3px;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 85%, transparent);
+  font-family: var(--msg-font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  cursor: pointer;
+}
+.circlesel__tab-wrap.is-live .circlesel__tab {
+  border-color: rgba(var(--msg-accent-rgb), 0.7);
+  background: rgba(var(--msg-accent-rgb), 0.12);
+  color: var(--msg-accent-fg);
+}
+.circlesel__tab.is-add { border-style: dashed; color: color-mix(in srgb, var(--msg-fg) 65%, transparent); }
+.circlesel__tab-n { font-size: 10px; opacity: 0.7; font-variant-numeric: tabular-nums; }
+
+.circlesel__tab-more {
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: -1px;
+  border: 1px solid rgba(var(--msg-accent-rgb), 0.22);
+  border-left: 0;
+  border-radius: 0 3px 3px 0;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 60%, transparent);
+  cursor: pointer;
+}
+.circlesel__tab-more:hover { color: var(--msg-accent-fg); }
+
+.circlesel__form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.circlesel__suggest { display: flex; flex-wrap: wrap; gap: 5px; width: 100%; }
+
+.circlesel__chip.is-suggest {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px dashed rgba(var(--msg-accent-rgb), 0.3);
+  border-radius: 14px;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 70%, transparent);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* ── 2. people ────────────────────────────────────────────────────────────── */
+
+.circlesel__people { display: flex; flex-direction: column; gap: 4px; }
+
+.circlesel__person {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 3px;
+}
+.circlesel__person.is-in { background: rgba(var(--msg-accent-rgb), 0.07); }
+
+.circlesel__person-open {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.circlesel__person-open:hover { background: rgba(var(--msg-accent-rgb), 0.06); }
+.circlesel__person-name { font-size: 13px; }
+.circlesel__person-tag { font-size: 11px; opacity: 0.55; }
+
+/* "from another family" badge — a friend seated in the home circle by the per-user flag
+   rather than by a `Person`. Same read as the guest badge on the family
+   selector: quiet, tinted, never louder than the name it qualifies. */
+.circlesel__person-badge {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border: 1px solid rgba(var(--msg-accent-rgb), 0.28);
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--msg-fg) 72%, transparent);
+  white-space: nowrap;
+}
+
+.circlesel__person-star {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 50%, transparent);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+.circlesel__person-star:hover { color: var(--msg-accent-fg); background: rgba(var(--msg-accent-rgb), 0.06); }
+.circlesel__person-star[aria-pressed="true"] { color: rgb(var(--msg-accent-rgb)); }
+/* a contact from another family IS their pin (the acceptance record): lit and inert, never «unpin» */
+.circlesel__person-star[aria-disabled="true"] { cursor: default; opacity: 0.55; }
+.circlesel__person-star[aria-disabled="true"]:hover { background: none; color: rgb(var(--msg-accent-rgb)); }
+.circlesel__person-star:focus-visible { outline: 2px solid rgba(var(--msg-accent-rgb), 0.75); outline-offset: -2px; }
+
+.circlesel__person-tick {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(var(--msg-accent-rgb), 0.22);
+  border-radius: 3px;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 70%, transparent);
+  font-size: 14px;
+  cursor: pointer;
+}
+.circlesel__person.is-in .circlesel__person-tick {
+  border-color: rgba(var(--msg-accent-rgb), 0.7);
+  color: var(--msg-accent-fg);
+}
+
+/* ── 3–4. hits and requests ───────────────────────────────────────────────── */
+
+.circlesel__hits { display: flex; flex-direction: column; gap: 2px; }
+
+.circlesel__hit,
+.circlesel__req {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px;
+  border-radius: 3px;
+}
+.circlesel__hit:nth-child(odd),
+.circlesel__req:nth-child(odd) { background: rgba(var(--msg-accent-rgb), 0.04); }
+
+.circlesel__hit-name,
+.circlesel__req-who { flex: 1 1 auto; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.circlesel__hit-tag { font-size: 11px; opacity: 0.55; }
+.circlesel__hit-state { font-size: 11px; opacity: 0.65; white-space: nowrap; }
+.circlesel__req-acts { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+
+/* ── >= 44x44 everywhere inside the contacts bodies ──
+   The Mantine `xs` / `compact-xs` controls are 22–30 px tall; inside a console
+   menu that is also the phone sheet they are thumb targets, so they get the
+   floor the rows have. One rule for both bodies (the groups body included). */
+:is(.circlesel, .groupman) :is(.mantine-Button-root, .mantine-TextInput-input) { min-height: 44px; }

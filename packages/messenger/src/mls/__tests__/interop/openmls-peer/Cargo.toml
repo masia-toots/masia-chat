@@ -1,0 +1,20 @@
+[package]
+name = "openmls-peer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "A JSON-lines driver around OpenMLS for the Masia MLS interop test (stdin: one command per line, stdout: one result per line)."
+
+# Pinned EXACTLY (and Cargo.lock is committed and built with --locked): the interop result is only
+# meaningful against a named OpenMLS release.
+[dependencies]
+openmls = "=0.9.1"
+openmls_rust_crypto = "=0.6.0"
+openmls_basic_credential = "=0.6.0"
+openmls_traits = "=0.6.0"
+serde_json = "1"
+base64 = "0.22"
+
+[profile.release]
+opt-level = 2
+debug = false

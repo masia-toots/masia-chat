@@ -1,0 +1,13 @@
+# An allow-list: the web image gets exactly what its Dockerfile copies, and nothing else from the
+# repository (no other package, no local node_modules, no build output, no environment files).
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+!patches
+!packages/contracts
+!packages/messenger
+!demo
+**/node_modules
+**/dist

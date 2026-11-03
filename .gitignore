@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+vitest-report.json
+
+# Keys and environment files never enter the repository; the playground makes its own at start-up.
+.env
+.env.*
+*.pem
+
+.DS_Store
