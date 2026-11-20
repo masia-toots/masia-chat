@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { IconSet, MessengerIconName } from '@masia/contracts';
 
-// The playground's icons: 27 small line drawings made for this page out of plain shapes (lines, arcs,
+// The playground's icons: 28 small line drawings made for this page out of plain shapes (lines, arcs,
 // rectangles, circles) on a 24 by 24 grid. They are drawn here, not taken from an icon library, so
 // the playground carries no third-party artwork and no licence besides its own.
 
@@ -142,6 +142,12 @@ const GLYPHS: Readonly<Record<MessengerIconName, ReactNode>> = {
     <>
       <rect x="3" y="4" width="18" height="12" rx="1.5" />
       <path d="M8 20 H16 M12 16 V20" />
+    </>
+  ),
+  muted: (
+    <>
+      <path d="M4 9 H8 L13 5 V19 L8 15 H4 Z" />
+      <path d="M4 4 L20 20" />
     </>
   ),
   logout: (

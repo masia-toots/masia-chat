@@ -1,13 +1,16 @@
 import {
+  type DeviceDto,
   type DeviceListEntry,
   type DeviceListVersion,
-  type DeviceRole,
   type HandshakeKind,
+  type IdentityRequestDto,
+  type PublicDeviceDto,
   RelayError,
   RelayErrorCode,
 } from '@masia/relay';
 import type { StoredDeviceList, StoredDeviceListVersion } from './domain/device-lists.js';
 import type { DeviceRow } from './domain/devices.js';
+import type { IdentityRequestView } from './domain/identity-requests.js';
 import type { ClaimedKeyPackage } from './domain/key-packages.js';
 import type { DeclaredMemberDelta } from './domain/member-delta.js';
 import type { EnvelopeRow, HandshakeRow, Page, ReadWindow } from './domain/rooms.js';
@@ -15,26 +18,11 @@ import type { EnvelopeRow, HandshakeRow, Page, ReadWindow } from './domain/rooms
 /**
  * The wire shapes, and the ONE place rows become them: bytes → base64 text, dates → ISO text.
  * A route never formats a row by hand, so a field cannot be spelled two ways.
+ *
+ * The device shapes (`DeviceDto`, `PublicDeviceDto`) and the identity request (`IdentityRequestDto`)
+ * are the wire contract's (`@masia/contracts/wire`, re-exported by `@masia/relay`): one home for the
+ * relay and its clients.
  */
-
-export interface DeviceDto {
-  readonly id: string;
-  readonly userId: string;
-  readonly role: DeviceRole;
-  readonly name: string | null;
-  readonly platform: string | null;
-  readonly identityKeyPub: string;
-  readonly signatureKeyPub: string;
-  readonly createdAt: string;
-  readonly lastSeenAt: string | null;
-  readonly revokedAt: string | null;
-}
-
-/**
- * A device as another user sees it: what they need to verify and address it, and nothing about its
- * owner's habits (label, platform, last seen) or its history.
- */
-export type PublicDeviceDto = Pick<DeviceDto, 'id' | 'role' | 'identityKeyPub' | 'signatureKeyPub'>;
 
 export interface ClaimedKeyPackageDto {
   readonly deviceId: string;
@@ -89,15 +77,42 @@ export function toDeviceDto(device: DeviceRow): DeviceDto {
     createdAt: toIso(device.createdAt),
     lastSeenAt: device.lastSeenAt === null ? null : toIso(device.lastSeenAt),
     revokedAt: device.revokedAt === null ? null : toIso(device.revokedAt),
+    holderProof: device.holderProof === null ? null : toBase64(device.holderProof),
   };
 }
 
+/** What another user sees of a device: never its label, history or holder proof. */
 export function toPublicDeviceDto(device: DeviceRow): PublicDeviceDto {
   return {
     id: device.id,
     role: device.role,
     identityKeyPub: toBase64(device.identityKeyPub),
     signatureKeyPub: toBase64(device.signatureKeyPub),
+  };
+}
+
+/** A request as its reader sees it: the sealed key only when the view carries it (N's own). */
+export function toIdentityRequestDto(view: IdentityRequestView): IdentityRequestDto {
+  const { request } = view;
+  const bytes = (value: Buffer | null): string | null => (value === null ? null : toBase64(value));
+  return {
+    id: request.id,
+    deviceId: request.deviceId,
+    purpose: request.purpose,
+    state: view.state,
+    transferKey: toBase64(request.transferKey),
+    commitment: bytes(request.commitment),
+    signature: toBase64(request.requestSignature),
+    challengerDeviceId: request.challengerDeviceId,
+    holderNonce: bytes(request.holderNonce),
+    deviceNonce: bytes(request.deviceNonce),
+    listVersion: request.listVersion,
+    sealed:
+      view.sealed === null
+        ? null
+        : { enc: toBase64(view.sealed.enc), ciphertext: toBase64(view.sealed.ciphertext) },
+    createdAt: toIso(request.createdAt),
+    expiresAt: toIso(request.expiresAt),
   };
 }
 

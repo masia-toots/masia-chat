@@ -7,6 +7,258 @@ lives in the host project's private working space, so the entries below carry wh
 is in [`context.md`](context.md). "Lead" is the AI session that plans and reviews; an "agent" does one step.
 Entries are added at the top. Times are agent working time, not elapsed days.
 
+## 2026-11-20 · The state page is brought up to date with the code
+
+- **What.** `context.md` rewritten from "State as of 2026-11-07" to 2026-11-20, every line checked against the
+  code and a test run of the day: contracts 661 tests, the client 879 (and 19 interop scenarios, run again: 19
+  of 19 pass), the relay library 91, the relay server 505 against a real Postgres, the playground 133;
+  `pnpm boundary` cruised 390 modules and found no violation. The state table now covers the outbox, the
+  server-owned unread number, the picture rule with the host's viewer and swipe, the contact strip of other
+  families, the identity-key transfer with the operator's reset, the Masia add rule and the relay's
+  guardian-removal rule. Chosen design records 12 to 15 added; the next-steps table and the list of what comes
+  after it rewritten; the open questions A to D kept as they were.
+- **Why.** The open set moved a good deal after 2026-11-07 and the page had stopped saying so: it still said
+  that a room another device joins stays pending until enrolment is built (enrolment has been built since
+  2026-10-10) and that key-package claims are neither consumed nor expired. The repository is about to be shown
+  again, and this is the page a reader opens second.
+- **Files.** `context.md` · `log.md`.
+- **Decision.** Rewritten, not appended; the chronology stays here. The commits since 2026-11-07 that have no
+  entry of their own (the contact strip of other families, the picture pager and the reply swipe, `data-chat-pane`,
+  the identity transfer and the operator's reset) are recorded in the state table and in designs 14 and 15 and
+  are not back-filled as dated entries. K7 (the purge) and K8 (the one switch) are not claimed done: this folder
+  records neither. Calls are said to be outside the open set, with nothing decided about moving them in.
+- **Next.** Three docs lag behind the code and are separate edits: [canon section 3](canon.md#3-devices) and
+  [`CHANGELOG.md`](CHANGELOG.md) do not describe the identity transfer and the operator's reset (or the picture
+  pager and the reply swipe), and this package's README still lists linking a new device as open.
+
+## 2026-11-20 · Opening a chat reads it, even when the newest line is my own
+
+- **What.** (1) `ui/conversation/messenger-chat-view.tsx`: the view sends `msg:read` up to the newest message
+  the server holds (`isUnconfirmedMessage` skips a row still on its way), whoever wrote it; it used to read only
+  when the newest message was someone else's. (2) `hooks/use-messenger.ts`: a `msg:read` receipt that flips no
+  status keeps the same message list.
+- **Why.** In an end-to-end encrypted room the host named a read instant that fell a few hundred milliseconds
+  short of the server's row for the newest message, so that row stayed unread. Once the reader replied, their
+  own line was the newest and no read was ever sent again: an unread badge that opening the chat never cleared.
+  The host now names the server's time; this change makes a missed read heal on the next open. Because both
+  sides of an open chat now read, a receipt that changes nothing must not produce a new list: the new list
+  would make the view read again, and that read is the other side's receipt (two open chats would bounce reads).
+- **Files.** `ui/conversation/messenger-chat-view.tsx` · `hooks/use-messenger.ts` · their tests.
+- **Decision.** `upTo` stays an instant of the server's rows; naming the right instant for an encrypted room is
+  the host's job (it holds both the relay's and the server's rows), not the protocol's.
+- **Next.** None.
+
+## 2026-11-18 · One set of outbox rules, for the host's assistant chat too
+
+- **What.** (1) `hooks/outbox-rules.ts`: the rules moved out of `messenger-outbox.ts` and made generic over the
+  entry and the history row (`settleOutboxEntries` with `OutboxHistoryRules { sentAt, shows, rowId, rowAt }`,
+  `failWaitingEntries`, `weaveOutboxRows`); `settleOutboxWithHistory` and `withOutboxRows` call them, with the
+  same behaviour. (2) `ui/conversation/unsent-row.tsx`: the bubble's "not sent" strip as its own component,
+  used by the bubble and exported.
+- **Why.** The host's chat with its assistant has its own send path and lost messages the same way (a frame
+  dropped while no socket was open, a row replaced by a history load). It now keeps an outbox in the same store
+  under these rules; a second copy of the rules would drift from the first.
+- **Files.** `hooks/{outbox-rules.ts,messenger-outbox.ts,index.ts}` · `ui/conversation/{unsent-row.tsx,bubble.tsx,index.ts}`.
+- **Decision.** The rules take the outbox's own row shape through four small functions instead of a common row
+  type: the two chats' rows differ (a sender id and `createdAt` here, a role and a timestamp there), and the
+  rules need only a time, an id and "is this row my entry". `PENDING_MESSAGE_ID_PREFIX`, the size cap and the
+  clock-skew window moved with them and are re-exported where they were.
+- **Next.** A turn id carried by the frame and returned by the echo and by every refusal would make matching
+  exact; that is the host server's change.
+
+## 2026-11-17 · A line that never left outlives the screen (the outbox)
+
+- **What.** (1) `hooks/outbox-store.ts`: a generic subscriber store of per-address lists (`createOutboxStore`,
+  `OutboxStorage`, `browserOutboxStorage`), memory or a Web Storage subset, every storage access wrapped.
+  (2) `hooks/messenger-outbox.ts`: the plaintext outbox on it, written per account and conversation
+  (`MESSENGER_OUTBOX_KEY_PREFIX`, `OUTBOX_STATE` `sending | unconfirmed | failed`, a size cap past which an
+  entry stays in memory). (3) `useMessenger` reads it through `useSyncExternalStore` (option `outbox`, default
+  `sharedMessengerOutbox()`): every send, text included, puts an entry and shows its row at once; the echo
+  (`msg:sent` or my own `msg:new`, either order) removes it; a dropped link marks waiting entries failed; the
+  next history page drops an entry it shows and fails one it should show but does not. `deleteMessage` on a
+  pending id discards locally and sends nothing. (4) The bubble's "not sent" strip has Retry and Delete; an
+  unconfirmed row's menu is Copy only and has no reactions. (5) `MessengerChatViewProps.composerBlock`: a host
+  line in place of the composer.
+- **Why.** Two reports from testers. A message refused in an encrypted room showed "not sent" and was gone
+  after a tab switch: the refusal lived in the screen's state. Sent messages "randomly disappeared": a text
+  had no row until its echo, so a frame the server dropped without a word (or a link that was not open) left
+  nothing on screen, and a failed row died with the screen too.
+- **Files.** `hooks/{outbox-store.ts,messenger-outbox.ts,use-messenger.ts,index.ts}` ·
+  `hooks/__tests__/use-messenger.test.ts` · `ui/conversation/{bubble.tsx,messenger-chat-view.tsx,messenger-chat-view.css}`
+  · `ui/conversation/__tests__/messenger-chat-view.test.tsx`.
+- **Decision.** The store is generic and the encrypted host builds its own on it with `storage: null`: plaintext
+  of an encrypted room never goes to browser storage, so its line survives the screen but not a reload until the
+  host's secure store holds it. Failed rows are woven in by time, waiting rows stay at the end: a waiting row
+  carries the device's clock and the server's rows the server's, and weaving by time let two quick messages swap
+  places while the first was confirmed. History matching uses kind, words, reply and a 30 s clock-skew window,
+  one row per entry, and never matches a refused entry (it cannot have arrived).
+- **Next.** The encrypted outbox across a reload (host secure store). The assistant chat has its own send path
+  and the same class of loss; it is not this package's hook.
+
+## 2026-11-15 · The thread lets the host draw its own service rows
+
+- **What.** `MessengerChatViewProps.renderServiceRow?: (row: ServiceRowProps) => ReactNode | undefined`, with
+  `ServiceRowProps { message, isOwn }` (exported). The view asks it about each `SYSTEM` message only; a node
+  replaces the bubble, `undefined` keeps it. `P2PChatBody` passes it through like every other view prop.
+- **Why.** The host's 1:1 audio call writes a missed-call row (a `SYSTEM` row with a code, worded by the host).
+  As a bubble it reads like a message the other person typed; the host wants a compact line with a "call back"
+  action, and the vocabulary of calls is the host's, not this package's.
+- **Files.** `ui/conversation/{messenger-chat-view.tsx,index.ts}` · `ui/conversation/__tests__/messenger-chat-view.test.tsx`
+  (1 new test).
+- **Decision.** A render prop on the view, not a new slot in `MessengerUiSlots`: it answers per row and may
+  decline, which a component slot cannot say, and only the conversation view has rows. Nothing else changes for
+  a host that does not pass it.
+
+## 2026-11-07 · A message that never left says so, and can be sent again
+
+- **What.** (1) `MessengerMessage.sendFailed?: boolean` (`protocol/messages.ts`) — this message is mine and it
+  never left. (2) `UseMessengerReturn.retrySend(messageId)` — send that row again. (3) `useMessenger` now
+  **waits for the answer** to every `msg:send`: it builds the row before posting, and on a refusal keeps it in
+  the thread marked `sendFailed` (held in an unsent map, keyed by the row id the view shows) instead of letting
+  the words disappear; a pending row that failed is never the one a later echo reconciles, so it keeps its place
+  while other messages arrive. Pending ids carry a counter, so two sends in one millisecond cannot share one.
+  (4) `Bubble` draws the state: the words stay, "not sent" in plain language next to them, the retry a real
+  touch target, and no delivery tick on a row that never left. (5) Two i18n keys, `chat.notSent` and
+  `chat.retrySend` (the port's `MessengerI18nKey`, the fake, the host adapter).
+- **Why.** The plaintext hook posted a text message and never looked at the answer: nothing was drawn until the
+  server echoed the row, so a refused send, or one into a dead socket, left an empty thread and an empty
+  composer — indistinguishable from never having typed. In a private room, reported from the field, that reads
+  as "messages are not being sent". The encrypted path had the mirror image of the same bug in the host: its
+  catch **removed** the pending bubble. The rule is now in the canon: a line somebody typed is never lost in
+  silence.
+- **Files.** `protocol/messages.ts` · `hooks/use-messenger.ts` · `ui/conversation/{bubble.tsx,messenger-chat-view.tsx,messenger-chat-view.css}` ·
+  `../contracts/src/ports/i18n-bundle.ts` · `../contracts/src/fakes/fake-i18n-bundle.ts` ·
+  `hooks/__tests__/use-messenger.test.ts` (5 new tests).
+- **Decision.** The failed row **stays where it was written** rather than moving to a tray: a message out of
+  its place in the thread is a second thing to understand. The retry is the same command again, not a new
+  message, so a send the host actually took (and whose answer we lost) cannot become a duplicate with a new id.
+  The bubble carries no error code — the room's state belongs to the security strip, which already words it.
+- **Next.** The host's encrypted hook now marks refusals the same way; a failed row does not yet survive a
+  reload (the unsent map lives in the hook), which is the next step if the field asks for it.
+
+## 2026-11-07 · The unread number is the server's: one live event, two more preview fields
+
+- **What.** (1) A new server event, `unread:update { conversationId, unreadCount, unreadMentions }`
+  (`protocol/events.ts`, in the `MsgServerEvent` union), filed under its own topic `UNREAD_EVENT_TOPIC`
+  (`'unread:'`, `protocol/codec.ts`) and known to `parseMsgServerEvent`. (2) `MessengerConversationPreview` gained
+  `unreadMentions: number` (the part of `unreadCount` that calls the reader) and `mutedUntil: string | null` (the
+  reader's own mute). (3) Tests: the event round-trips and sits under its own topic, not the conversation one.
+- **Why.** A count a client derives from the messages it happened to receive drifts the moment a second device,
+  a read on another screen or a reconnect is involved. The host owns the number and says it after every delivery
+  and every read; the client applies it and never adds. The event is not about one open room, so it must not
+  share the conversation topic: a client with no room open still needs it.
+- **Files.** `protocol/{events.ts,codec.ts,conversations.ts,index.ts}` · `protocol/__tests__/codec.test.ts`.
+- **Decision.** The numbers are absolute, not a delta. `unreadMentions <= unreadCount` always. Muting changes
+  neither (it is a display rule). The package only types and routes the event; what counts as a mention is the
+  host's rule, so the package carries no copy of it.
+- **Next.** The view consumes the event and shows the badge (a later step).
+
+## 2026-11-06 · The sender's face and colour in the thread; one participant list
+
+- **What.** (1) `Participant` (`ui/provider/slots.ts`: `{ id, name, avatarUrl?, color?, tag? }`) is the view's one list
+  of the room's people; `MentionCandidate` is now `Participant & { tag: string }`, and `isMentionCandidate` is the filter
+  `buildMentionCandidates` applies — a person without a `tag` has a face and a colour but is never a chip or a completion
+  row. (2) The view hands each bubble its `sender` and `showAvatar` (the first bubble of someone else's run, in a group
+  as in a 1:1). (3) `Bubble`: the sender's picture, or an initial on their colour, in a 28 px column at the left
+  (`.hub-msg-avatar`; later bubbles of the run keep the column, `.hub-msg-avatar-gap`, so the text lines up); the
+  sender's colour as ONE custom property on the row (`--sender-color`), read by the sender name and by a 3 px left edge
+  of the bubble (`.hub-msg--edged`; never on a sticker, never on an own bubble, the same colour in light and dark); the
+  bubble background is not tinted. The wire type `ParticipantPreview` gained `accentColor?` so a host can carry the
+  stored choice. (4) Tests: the bubble (six cases: initial · picture · gap on later bubbles · never own · sticker keeps
+  the face, not the edge · an unknown sender gets neither), the view (faces once per run, colours per row, a tag-less
+  participant is not a chip, 1:1 draws the edge without the name), the filter.
+- **Why.** The host's decision record on chat message intents, section 8: an avatar on the first message of a run, the
+  sender's name and a thin edge in the person's colour. One list for faces and mentions, or the two drift; the colour
+  rule (a palette, a default from the id, a stored choice) is the host's and stays there — the package draws a CSS
+  colour it is given.
+- **Files.** `ui/provider/slots.ts` · `ui/conversation/{bubble.tsx,messenger-chat-view.tsx,messenger-chat-view.css,
+  mention-candidates.ts,index.ts}` · `ui/provider/index.ts` · `protocol/conversations.ts` · the three test files.
+- **Decision.** The custom property sits on the ROW, not the bubble, because the avatar beside the bubble reads it
+  too; the edge is a class (`hub-msg--edged`) so a sticker's transparent bubble can keep the face and drop the edge
+  without a second property. The avatar is `aria-hidden`: the name row (or the room header in a 1:1) already says who.
+- **Next.** The thread still has no system-row slot; a picture that fails to load shows a broken image rather than the
+  initial (the host's own chip falls back — the same fallback here is a small follow-up).
+
+## 2026-11-06 · @-mentions in the composer and the thread, by candidate list
+
+- **What.** (1) A new field on the composer port, `mentionCandidates` (`{ id, tag, name, avatarUrl? }`): who `@` may
+  complete to. The package never parses the host's handle grammar; it matches the list it is given, so a row or a
+  chip exists only for a real participant. (2) `useMentionPopover` (one hook for the package's slim composer and a
+  host's richer one): open while the caret sits in an `@…` token with a match, ↑/↓ move, Enter/Tab insert `@tag `
+  with the caret after it, Esc hides the list until the token changes, a tap inserts; the pure half
+  (`activeMentionToken`, `insertMention`, `filterMentionCandidates`: prefix of the tag or of any word of the name,
+  case- and diacritics-insensitive, six rows) is tested on its own. (3) `MentionPopover`: a listbox above the
+  composer (`bottom: 100%` of a positioned parent, so it stays above the on-screen keyboard the composer already
+  clears), picture or initial, name, `@tag`, `aria-activedescendant` on the box. (4) `renderMentions` draws a chip
+  for a candidate's tag in a bubble (`is-me` when it names the reader; an address like `a@b.c` is left alone);
+  `buildMentionCandidates` turns the view's new `participants` and `masiaCanBeCalled` props into the two lists
+  (chips: everyone; composer: everyone but me; the assistant first when the host says she can be called).
+  Two words joined the port: the list's name and the assistant's display name.
+- **Why.** A mention is a text token and nothing else is stored; the grammar has one home in the host, and the push
+  for a mention is the host's job. The package's part is the completion and the chip, both from a list the host owns.
+- **Files.** `ui/provider/slots.ts`; `ui/composer/{mention-token,use-mention-popover,mention-popover}`; `ui/conversation/
+  {render-mentions,mention-candidates}`; small additive edits in `composer.tsx`, `bubble.tsx`, `messenger-chat-view.tsx`;
+  `MESSENGER_I18N_KEYS` and the fake bundle in the contracts.
+- **Decision.** Chips mark everyone with a handle, me included, so «mentioned me» can look different; the composer
+  offers everyone but me. In my own bubble the chip keeps the bubble's text colour as a pill (the accent on the
+  accent gradient would vanish). An empty match list closes the popover rather than showing a hint row.
+- **Next.** The host's push category for a mention and the on-call's handle are the host's steps; a «mentioned me»
+  badge needs a stored column and is out of scope.
+## 2026-11-06 · Reply, one intent strip, server-filled quotes, ArrowUp recalls my last message
+
+- **What.** (1) A **reply** intent: Reply is the first `⋮` row of any message that is not deleted; the strip above
+  the composer says who is being answered and quotes them; the send carries `replyToId`; pictures, stickers and
+  dictation stay on (an edit still turns them off). (2) The `editing` state became one `intent` (`reply | edit`)
+  drawn by one `IntentStrip`; ✕ and Esc cancel. (3) The `⋮` rows come from one builder, `messageActionRows`
+  (`@masia/messenger/ui`), so a host bubble can use the same list. (4) `replyToPreview` gained `deleted?`; the
+  wire's `msg:new` carries it; the view fills a missing preview from the loaded list (`withReplyPreviews`), words
+  a deleted parent and never quotes it, and a tap on the quote scrolls to the parent (`data-msg-id`) with a
+  1.2 s flash that respects reduced motion. (5) `ComposerSlotProps.onRecallLast`: ArrowUp in an empty draft; the
+  view resolves the last own text message (not a sticker, not deleted) and opens its edit, caret at the end.
+  Three new words (`chat.reply`, `chat.replyingTo`, `chat.replyDeleted`).
+- **Why.** `replyToId` was on the schema, the events and the bubble for months, and nothing sent one; the
+  menu rows were built inline in the bubble and a second copy was about to appear in a host. One state, one row
+  builder, one preview mapper (server side) was the cheapest shape that could not drift.
+- **Files.** `ui/conversation/{message-actions,reply-preview}.ts`, `intent-strip.tsx`, `bubble.tsx`,
+  `messenger-chat-view.{tsx,css}`, `ui/composer/composer.tsx`, `ui/provider/slots.ts`, `protocol/{messages,events}.ts`,
+  `hooks/use-messenger.ts`; the contracts' key list and fake; the tests beside each.
+- **Decision.** The composer reports the key and the view picks the message (a slot owns no messages). The
+  server fills the quote and the client only falls back (a client-only quote breaks on a history page whose
+  parent is not loaded; a denormalised copy of the parent text would outlive an edit). The Reply row reuses the
+  `back` glyph, a return arrow, instead of growing the closed icon list. The text cap of the quote lives on the
+  server only; the bubble ellipsises, so the client needs no second number.
+- **Next.** The host's assistant-chat bubble imports `messageActionRows` and gains re-ask on edit (the host's
+  own step); mentions as text tokens with a candidate list through the composer slot.
+## 2026-11-03 · The first cut is pushed: one commit, to a private repository
+
+- **What.** (1) The first cut of the open set was assembled with `tools/open-split/assemble.mjs` from one committed
+  revision of the host and pushed as ONE commit, "Open Masia messenger: initial cut" (`d39915d`, authored by the
+  lead maintainer of `MAINTAINERS.md`), to a PRIVATE repository of the project's GitHub organisation, branch `main`.
+  The organisation carries the company's legal name; the domain is only the domain. Nothing is public: the
+  visibility change is a separate decision of the founders. (2) The cut was checked where it lives: install 17 s,
+  typecheck 11 s, test 264 s, lint 16 s, `docs:check` 1 s, all green; the repository's own CI (its workflow plus
+  the secret-scan job) ran green on GitHub; and in `demo/` `docker compose up --build` brought the relay's
+  database, the relay and the web client up healthy, two browser tabs (two people) sent one message each way, and
+  the playground showed its "Text is encrypted" badge; `docker compose down -v` left nothing behind.
+- **Why.** One commit, not the history. The scan of the set's history before the cut (71 commits, two identities,
+  both the founder's) found no real secret: the secret scanner's 232 hits are RFC 9420 test vectors and public
+  keys, and the other scanner's only find is a development database default. It did find private traces in the
+  messages and in old file versions: the agent session trailer on 65 commits, the private working environment's
+  paths and the production domain in 56 messages, a family member's name used as test data. No history rewriter was
+  at hand, and a free-text message cannot be proven clean; a cut with no history can.
+- **Files.** `docs/log.md`. The cut's own code is the K14 tooling (`tools/open-split/`); the push changed no file
+  here.
+- **Decision.** The K14 default, one commit, is now the decision; rewriting the history is rejected. The history
+  scan keeps exiting 1 on the host's own history of the set when run with `--strict`: that is expected, it measures
+  what a cut with history would have carried. It is run again, with the secret scan, as a gate before the
+  visibility change. One security gate is open on the host's side, not in this repository: the host's own
+  development database credentials were echoed by the relay's development defaults. The assembly now rewrites
+  those defaults to a neutral `postgresql://relay@localhost` address, and the host rotates the credentials in
+  question and re-checks its exposure before the visibility change.
+- **Next.** The mailbox of the security address must accept mail before the first public day; the host-side gate
+  above; a last run of the history scan and the secret scan on the commit that goes public; then the founders'
+  call on visibility.
+
 ## 2026-11-03 · Before publishing: the README says what is built, and the founders' contacts are filled in
 
 - **What.** (1) The README no longer says the MLS core and the UI core are "not built yet": both are, and so is

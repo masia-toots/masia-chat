@@ -6,8 +6,12 @@
  * and the connection state are topics, commands are POSTs (the convention lives in `../protocol`).
  * The hook knows nothing about sockets, tokens, base URLs or the host's tenancy; `historyPath` is the
  * one place the host says where a conversation's history lives.
+ *
+ * My own sends live in the OUTBOX (`messenger-outbox.ts`) from the moment they are sent until the
+ * server confirms them, not in this hook's state: a screen that unmounts or reloads must not take the
+ * words with it. `messages` is the server's rows with those woven in.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { Transport, TransportResponse } from '@masia/contracts';
 import {
   commandRequest,
@@ -20,15 +24,30 @@ import {
   parseMsgServerEvent,
 } from '../protocol/codec.js';
 import type { MsgClientEvent } from '../protocol/events.js';
+import { isBroadcastMention } from '../protocol/messages.js';
 import type {
+  BroadcastMention,
   MessageImagePayload,
   MessageType,
   MessengerMessage,
   TypingIndicator,
 } from '../protocol/messages.js';
+import {
+  echoConfirms,
+  failWaitingEntries,
+  messengerOutboxAddress,
+  OUTBOX_STATE,
+  PENDING_MESSAGE_ID_PREFIX,
+  settleOutboxWithHistory,
+  sharedMessengerOutbox,
+  withOutboxRows,
+  type MessengerOutbox,
+  type MessengerOutboxEntry,
+} from './messenger-outbox.js';
 
-/** Ids of messages shown before the server confirmed them start with this; the server id replaces it. */
-export const PENDING_MESSAGE_ID_PREFIX = 'pending-';
+export { PENDING_MESSAGE_ID_PREFIX };
+
+const NO_ENTRIES: readonly MessengerOutboxEntry[] = Object.freeze([]);
 
 /** What `lastError` says when the hook itself (not the server) could not do something. */
 export const MESSENGER_HOOK_ERRORS = {
@@ -54,6 +73,11 @@ export interface UseMessengerOptions {
    * a new function means «the history source changed» and reloads the open conversation.
    */
   historyPath: ((conversationId: string) => string) | null;
+  /**
+   * Where my unconfirmed sends are kept (`createMessengerOutbox`). Absent: the page's shared one, over
+   * the browser's storage. Must be stable across renders.
+   */
+  outbox?: MessengerOutbox;
 }
 
 export interface UseMessengerReturn<M extends MessengerMessage = MessengerMessage> {
@@ -79,7 +103,10 @@ export interface UseMessengerReturn<M extends MessengerMessage = MessengerMessag
   sendTyping: (isTyping: boolean) => void;
   /** Mark all messages up to a given timestamp as read. */
   markRead: (upTo: string) => void;
-  /** Soft-delete a message by ID. Only works on own messages. */
+  /**
+   * Soft-delete a message by ID. Only works on own messages. A row of mine the server never confirmed
+   * (`pending-…`, shown "not sent") is discarded here instead: there is nothing on the server to delete.
+   */
   deleteMessage: (messageId: string) => void;
   /** Edit the text of one of your own messages. */
   editMessage: (messageId: string, text: string) => void;
@@ -91,8 +118,17 @@ export interface UseMessengerReturn<M extends MessengerMessage = MessengerMessag
    * a push without text). Never carries the text. Resolves `true` once the host accepted the command
    * (the caller may forget the announcement) and `false` when it did not (a dead link, a refusal: the
    * caller keeps it and asks again; it never rejects).
+   *
+   * `opts.broadcast`: the message called the room with `@all` / `@online` (ADR-201) — the ONE bit the
+   * metadata row carries, so the other members' push is raised to a mention while the text stays
+   * ciphertext. The caller reads the tag on the sender's device; absent = the row calls nobody.
    */
-  announceE2eeEnvelope?: (envelopeId: string) => Promise<boolean>;
+  announceE2eeEnvelope?: (envelopeId: string, opts?: { broadcast?: BroadcastMention }) => Promise<boolean>;
+  /**
+   * Sends again a message of mine that never left (`MessengerMessage.sendFailed`), by the id of the
+   * row that shows it, with the same command. Unknown id, or a row not marked failed: nothing happens.
+   */
+  retrySend: (messageId: string) => void;
   /** Load older messages (pagination). */
   loadMore: () => void;
   /** Whether there are more older messages. */
@@ -137,8 +173,10 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
   options: UseMessengerOptions,
 ): UseMessengerReturn<M> {
   const { transport, conversationId, currentPersonId, historyPath } = options;
+  const outbox = options.outbox ?? sharedMessengerOutbox();
 
-  const [messages, setMessages] = useState<M[]>([]);
+  /** The server's rows (history and live); my unconfirmed sends are woven in from the outbox below. */
+  const [serverMessages, setMessages] = useState<M[]>([]);
   const [connected, setConnected] = useState(false);
   const [typingIndicators, setTypingIndicators] = useState<TypingIndicator[]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -149,9 +187,41 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
   const cursorRef = useRef<string | null>(null);
   const conversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
+  const currentPersonIdRef = useRef(currentPersonId);
+  currentPersonIdRef.current = currentPersonId;
+  /** The outbox address of the open conversation, read where a closure must not go stale. */
+  const addressOf = useCallback(
+    (cid: string): string => messengerOutboxAddress(currentPersonIdRef.current, cid),
+    [],
+  );
+  /**
+   * Server ids of my messages already on screen through an echo (`msg:new` or `msg:sent`). The server
+   * sends the sender both, in either order: the second must find its message here, not take the NEXT
+   * unconfirmed entry for its own.
+   */
+  const echoedIdsRef = useRef(new Set<string>());
+
+  const address = conversationId ? messengerOutboxAddress(currentPersonId, conversationId) : null;
+  const outboxEntries = useSyncExternalStore(outbox.subscribe, () =>
+    address ? outbox.read(address) : NO_ENTRIES,
+  );
+  const messages = useMemo(
+    () => withOutboxRows(serverMessages, outboxEntries),
+    [serverMessages, outboxEntries],
+  );
+
+  /** Counts the rows this hook made, so two sends in the same millisecond never share an id. */
+  const pendingSeqRef = useRef(0);
+  const nextPendingId = useCallback((): string => {
+    pendingSeqRef.current += 1;
+    return `${PENDING_MESSAGE_ID_PREFIX}${Date.now()}-${pendingSeqRef.current}`;
+  }, []);
 
   // ── Load message history ──────────────────────────────────────────────────
   useEffect(() => {
+    // My unconfirmed sends are NOT cleared here: they live in the outbox, per conversation, and come
+    // back with it.
+    echoedIdsRef.current.clear();
     setMessages([]);
     setHasMore(false);
     setTypingIndicators([]);
@@ -161,6 +231,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
     if (!conversationId || !historyPath) return;
 
     setLoadingHistory(true);
+    const askedAt = Date.now();
     transport
       .fetch(historyPagePath(historyPath(conversationId), null), { method: 'GET' })
       .then((response) => {
@@ -173,6 +244,14 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
         setMessages(page.messages);
         cursorRef.current = page.nextCursor;
         setHasMore(page.nextCursor !== null);
+        // What the page shows was delivered; what it should show and does not was lost.
+        settleOutboxWithHistory(
+          outbox,
+          addressOf(conversationId),
+          page.messages,
+          currentPersonIdRef.current,
+          askedAt,
+        );
       })
       .catch(() => {
         if (unmountedRef.current || conversationIdRef.current !== conversationId) return;
@@ -182,7 +261,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
         if (unmountedRef.current || conversationIdRef.current !== conversationId) return;
         setLoadingHistory(false);
       });
-  }, [conversationId, historyPath, transport]);
+  }, [conversationId, historyPath, transport, outbox, addressOf]);
 
   // ── Subscribe to server events and the link state ─────────────────────────
   useEffect(() => {
@@ -208,7 +287,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
             mediaUrl: event.payload.mediaUrl ?? null,
             mediaUrls: event.payload.mediaUrls ?? null,
             replyToId: event.payload.replyToId ?? null,
-            replyToPreview: null,
+            replyToPreview: event.payload.replyToPreview ?? null,
             createdAt: event.payload.createdAt,
             editedAt: null,
             deletedAt: null,
@@ -226,63 +305,94 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
             ...(event.payload.serviceMeta !== undefined
               ? { serviceMeta: event.payload.serviceMeta }
               : {}),
+            ...(isBroadcastMention(event.payload.broadcast) ? { broadcast: event.payload.broadcast } : {}),
           });
-          setMessages((prev) => {
-            // Already present (reconnection, or msg:sent already reconciled it).
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            // Our own optimistic message (sticker/image) echoed back by the
-            // server's sender self-broadcast. Reconcile the `pending-` placeholder
-            // in place instead of appending a duplicate. The server sends BOTH
-            // msg:new and msg:sent to the sender and either may arrive first, so
-            // both this and the msg:sent handler must converge on one message.
-            if (newMsg.senderId === currentPersonId) {
-              const idx = prev.findIndex(
-                (m) =>
-                  m.id.startsWith(PENDING_MESSAGE_ID_PREFIX) &&
-                  m.messageType === newMsg.messageType,
-              );
-              if (idx !== -1) {
-                const copy = [...prev];
-                copy[idx] = { ...copy[idx]!, id: newMsg.id, createdAt: newMsg.createdAt };
-                return copy;
-              }
+          const mine = newMsg.senderId === currentPersonId;
+          // My own send echoed back by the server's sender self-broadcast: its outbox entry leaves and
+          // the server's row takes its place, keeping what only this device has (the inline pictures).
+          // The server sends the sender BOTH msg:new and msg:sent, in either order; whichever comes
+          // first confirms the entry, the second finds the id in `echoedIdsRef`. A `failed` entry is a
+          // DIFFERENT message that never left: it is never the one an echo confirms.
+          let shown = newMsg;
+          if (mine && !echoedIdsRef.current.has(newMsg.id)) {
+            const address = addressOf(event.payload.conversationId);
+            const entry = outbox
+              .read(address)
+              .find((e) => e.state !== OUTBOX_STATE.FAILED && echoConfirms(e, newMsg));
+            if (entry) {
+              outbox.remove(address, entry.id);
+              shown = asHostMessage<M>({
+                ...entry.row,
+                ...newMsg,
+                ...(entry.row.images ? { images: entry.row.images } : {}),
+                deliveryStatus: entry.row.deliveryStatus,
+                reactions: entry.row.reactions ?? [],
+              });
             }
-            return [...prev, newMsg];
+          }
+          if (mine) echoedIdsRef.current.add(newMsg.id);
+          setMessages((prev) => {
+            const at = prev.findIndex((m) => m.id === shown.id);
+            if (at === -1) return [...prev, shown];
+            // Already present: a reconnection, or msg:sent put my row in first. The echo carries what
+            // msg:sent does not (the words as stored, a filter's version of them, the pictures' URLs).
+            if (!mine) return prev;
+            const copy = [...prev];
+            const held = copy[at]!;
+            copy[at] = {
+              ...held,
+              text: newMsg.text,
+              modified: newMsg.modified,
+              mediaUrl: newMsg.mediaUrl ?? held.mediaUrl,
+              mediaUrls: newMsg.mediaUrls ?? held.mediaUrls ?? null,
+            };
+            return copy;
           });
           setTypingIndicators((prev) => prev.filter((t) => t.personId !== event.payload.senderId));
           break;
         }
 
         case 'msg:sent': {
-          // Confirmation that our message was persisted. Reconcile the optimistic
-          // image message (pending- id) with the real server id so it isn't
-          // duplicated on reload and delivery status can track correctly.
+          // Confirmation that my message was persisted (its id only). Its echo may already have
+          // confirmed it; otherwise the oldest entry still waiting is the one (the server answers in
+          // the order it was sent), and the server's id replaces the pending one.
           if (event.payload.conversationId !== conversationIdRef.current) break;
-          setMessages((prev) => {
-            const idx = prev.findIndex((m) => m.id.startsWith(PENDING_MESSAGE_ID_PREFIX));
-            if (idx === -1) return prev;
-            const copy = [...prev];
-            copy[idx] = {
-              ...copy[idx]!,
-              id: event.payload.messageId,
-              createdAt: event.payload.createdAt ?? copy[idx]!.createdAt,
-            };
-            return copy;
+          const { messageId } = event.payload;
+          if (echoedIdsRef.current.has(messageId)) break;
+          const address = addressOf(event.payload.conversationId);
+          const entry = outbox.read(address).find((e) => e.state !== OUTBOX_STATE.FAILED);
+          if (!entry) break;
+          echoedIdsRef.current.add(messageId);
+          outbox.remove(address, entry.id);
+          const confirmed = asHostMessage<M>({
+            ...entry.row,
+            id: messageId,
+            createdAt: event.payload.createdAt ?? entry.row.createdAt,
           });
+          setMessages((prev) => (prev.some((m) => m.id === messageId) ? prev : [...prev, confirmed]));
           break;
         }
 
         case 'msg:read': {
           if (event.payload.conversationId !== conversationIdRef.current) break;
-          // Update delivery status for messages read by this person
-          setMessages((prev) =>
-            prev.map((msg) => {
-              if (msg.senderId === currentPersonId && msg.createdAt <= event.payload.upTo) {
+          // Update delivery status for messages read by this person. A receipt that changes nothing keeps
+          // the SAME list: a new list makes the open view read again (every side reads, К3 2026-11-20), and
+          // that read is the other side's receipt — two open chats would bounce reads forever.
+          setMessages((prev) => {
+            let changed = false;
+            const next = prev.map((msg) => {
+              if (
+                msg.senderId === currentPersonId &&
+                msg.deliveryStatus !== 'READ' &&
+                msg.createdAt <= event.payload.upTo
+              ) {
+                changed = true;
                 return { ...msg, deliveryStatus: 'READ' as const };
               }
               return msg;
-            }),
-          );
+            });
+            return changed ? next : prev;
+          });
           break;
         }
 
@@ -354,7 +464,12 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
     const unsubscribeConnection = transport.subscribe(MESSENGER_CONNECTION_TOPIC, (bytes) => {
       if (unmountedRef.current) return;
       const isConnected = parseConnectionState(bytes);
-      if (isConnected !== null) setConnected(isConnected);
+      if (isConnected === null) return;
+      setConnected(isConnected);
+      // The link went down: an echo still owed for a send on it will never come over it. Every
+      // waiting send of the open conversation says "not sent" now, with its retry.
+      const cid = conversationIdRef.current;
+      if (!isConnected && cid) failWaitingEntries(outbox, addressOf(cid));
     });
 
     return () => {
@@ -362,7 +477,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
       unsubscribeEvents();
       unsubscribeConnection();
     };
-  }, [currentPersonId, transport]);
+  }, [currentPersonId, transport, outbox, addressOf]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -390,41 +505,90 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
     [postCommand],
   );
 
+  /**
+   * Posts a send of MINE that is already in the outbox, and records the host's answer on its entry: a
+   * refusal or a dead link makes it `failed` (the row says "not sent", `retrySend` posts it again); an
+   * accepted command leaves it `unconfirmed` until the server's echo removes it. The answer is recorded
+   * even when this screen is gone by then: the outbox outlives it, and so must the verdict.
+   */
+  const postSend = useCallback(
+    (address: string, entry: MessengerOutboxEntry): void => {
+      void postCommand(entry.command).then((ok) => {
+        outbox.update(address, entry.id, (held) => ({
+          ...held,
+          handedOff: held.handedOff || ok,
+          state:
+            held.state === OUTBOX_STATE.SENDING
+              ? ok
+                ? OUTBOX_STATE.UNCONFIRMED
+                : OUTBOX_STATE.FAILED
+              : held.state,
+        }));
+      });
+    },
+    [outbox, postCommand],
+  );
+
+  /** Puts a new send of mine into the outbox (its row shows at once) and posts it. */
+  const send = useCallback(
+    (row: M, command: MsgClientEvent): void => {
+      const address = addressOf(row.conversationId);
+      const entry: MessengerOutboxEntry = {
+        id: row.id,
+        state: OUTBOX_STATE.SENDING,
+        handedOff: false,
+        row,
+        command,
+      };
+      outbox.put(address, entry);
+      postSend(address, entry);
+    },
+    [outbox, addressOf, postSend],
+  );
+
+  const retrySend = useCallback(
+    (messageId: string): void => {
+      const cid = conversationIdRef.current;
+      if (!cid) return;
+      const address = addressOf(cid);
+      const held = outbox.read(address).find((entry) => entry.id === messageId);
+      if (!held || held.state !== OUTBOX_STATE.FAILED) return;
+      const again: MessengerOutboxEntry = { ...held, state: OUTBOX_STATE.SENDING };
+      outbox.put(address, again);
+      postSend(address, again);
+    },
+    [outbox, addressOf, postSend],
+  );
+
   const sendMessage = useCallback(
     (text: string, opts?: { replyToId?: string; images?: MessageImagePayload[] }) => {
       if (!conversationIdRef.current) return;
       const images = opts?.images;
 
-      // Optimistically render our own image message immediately, from the inline
-      // base64, before the server has persisted it. The server sends the sender
-      // BOTH msg:new (its self-broadcast) and msg:sent (id only), in either order;
-      // the msg:new and msg:sent handlers above each reconcile this `pending-`
-      // row in place, so it converges on one message. (Until 2026-10-10 this
-      // comment said msg:new went only to the OTHER participants, which
-      // contradicted the msg:new handler and the server.) Pure-text messages
-      // keep their existing path.
-      if (images?.length) {
-        const optimistic = asHostMessage<M>({
-          id: `${PENDING_MESSAGE_ID_PREFIX}${Date.now()}`,
-          conversationId: conversationIdRef.current,
-          senderId: currentPersonId ?? '',
-          senderName: '',
-          text,
-          messageType: 'IMAGE',
-          mediaUrl: null,
-          images, // inline base64 so it shows instantly; persisted copy loads on reload
-          replyToId: opts?.replyToId ?? null,
-          replyToPreview: null,
-          createdAt: new Date().toISOString(),
-          editedAt: null,
-          deletedAt: null,
-          deliveryStatus: 'SENT',
-          modified: null,
-        });
-        setMessages((prev) => [...prev, optimistic]);
-      }
+      // Every message of mine shows at once (an image from its inline base64) and stays in the outbox
+      // until the server confirms it: msg:new (its self-broadcast) and msg:sent (id only) arrive in
+      // either order, and whichever comes first swaps this `pending-` row for the server's, so it
+      // converges on one message. A text used to show only once echoed, so a text the server dropped
+      // without a word vanished with nothing on screen to say so.
+      const row = asHostMessage<M>({
+        id: nextPendingId(),
+        conversationId: conversationIdRef.current,
+        senderId: currentPersonId ?? '',
+        senderName: '',
+        text,
+        messageType: images?.length ? 'IMAGE' : 'TEXT',
+        mediaUrl: null,
+        ...(images?.length ? { images } : {}), // inline base64 so it shows instantly; persisted copy loads on reload
+        replyToId: opts?.replyToId ?? null,
+        replyToPreview: null,
+        createdAt: new Date().toISOString(),
+        editedAt: null,
+        deletedAt: null,
+        deliveryStatus: 'SENT',
+        modified: null,
+      });
 
-      sendCommand({
+      send(row, {
         type: 'msg:send',
         payload: {
           conversationId: conversationIdRef.current,
@@ -434,7 +598,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
         },
       });
     },
-    [currentPersonId, sendCommand],
+    [currentPersonId, nextPendingId, send],
   );
 
   /**
@@ -447,7 +611,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
       if (!conversationIdRef.current || !stickerId) return;
       const encoded = `${motionPreset || NO_PRESET}|${soundPreset || NO_PRESET}`;
       const optimistic = asHostMessage<M>({
-        id: `${PENDING_MESSAGE_ID_PREFIX}${Date.now()}`,
+        id: nextPendingId(),
         conversationId: conversationIdRef.current,
         senderId: currentPersonId ?? '',
         senderName: '',
@@ -463,8 +627,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
         modified: null,
         reactions: [],
       });
-      setMessages((prev) => [...prev, optimistic]);
-      sendCommand({
+      send(optimistic, {
         type: 'msg:send',
         payload: {
           conversationId: conversationIdRef.current,
@@ -474,11 +637,11 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
         },
       });
     },
-    [currentPersonId, sendCommand],
+    [currentPersonId, nextPendingId, send],
   );
 
   const announceE2eeEnvelope = useCallback(
-    (envelopeId: string): Promise<boolean> => {
+    (envelopeId: string, opts?: { broadcast?: BroadcastMention }): Promise<boolean> => {
       if (!conversationIdRef.current || !envelopeId) return Promise.resolve(false);
       return postCommand({
         type: 'msg:send',
@@ -486,6 +649,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
           conversationId: conversationIdRef.current,
           text: '',
           e2eeEnvelopeId: envelopeId,
+          ...(opts?.broadcast ? { broadcast: opts.broadcast } : {}),
         },
       });
     },
@@ -516,7 +680,14 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
 
   const deleteMessage = useCallback(
     (messageId: string) => {
-      if (!conversationIdRef.current) return;
+      const cid = conversationIdRef.current;
+      if (!cid) return;
+      // A row the server never confirmed has no server copy: discarding it is local, and a delete
+      // command for a `pending-` id would only earn an error.
+      if (messageId.startsWith(PENDING_MESSAGE_ID_PREFIX)) {
+        outbox.remove(addressOf(cid), messageId);
+        return;
+      }
       // Optimistic update — mark as deleted locally
       setMessages((prev) =>
         prev.map((msg) =>
@@ -525,10 +696,10 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
       );
       sendCommand({
         type: 'msg:delete',
-        payload: { messageId, conversationId: conversationIdRef.current },
+        payload: { messageId, conversationId: cid },
       });
     },
-    [sendCommand],
+    [sendCommand, outbox, addressOf],
   );
 
   const editMessage = useCallback(
@@ -619,6 +790,7 @@ export function useMessenger<M extends MessengerMessage = MessengerMessage>(
     editMessage,
     reactToMessage,
     announceE2eeEnvelope,
+    retrySend,
     loadMore,
     hasMore,
     loadingHistory,

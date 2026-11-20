@@ -5,8 +5,10 @@ import {
   encodeMsgServerEvent,
   HISTORY_PAGE_SIZE,
   historyPagePath,
+  MESSENGER_EVENT_TOPIC,
   parseConnectionState,
   parseMsgServerEvent,
+  UNREAD_EVENT_TOPIC,
 } from '../codec.js';
 import type { MsgServerEvent } from '../events.js';
 
@@ -23,6 +25,17 @@ describe('server events', () => {
       },
     };
     expect(parseMsgServerEvent(encodeMsgServerEvent(event))).toEqual(event);
+  });
+
+  it('knows the person-level unread event (ADR-201) and files it under its own topic', () => {
+    const event: MsgServerEvent = {
+      type: 'unread:update',
+      payload: { conversationId: 'c1', unreadCount: 12, unreadMentions: 2 },
+    };
+    expect(parseMsgServerEvent(encodeMsgServerEvent(event))).toEqual(event);
+    expect(event.type.startsWith(UNREAD_EVENT_TOPIC)).toBe(true);
+    // …and not under the conversation topic: a client with no room open must still receive it.
+    expect(event.type.startsWith(MESSENGER_EVENT_TOPIC)).toBe(false);
   });
 
   it('drops what it cannot trust instead of throwing into the transport', () => {

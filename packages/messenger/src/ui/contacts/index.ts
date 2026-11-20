@@ -1,5 +1,4 @@
-export { ContactsDoor, type ContactsDoorProps } from './contacts-door.js';
-export { ContactsMenu, type ContactsMenuProps } from './contacts-menu.js';
+export { ContactsPanel, type ContactsPanelProps } from './contacts-panel.js';
 export {
   CONTACTS_SEEN_KEY,
   CONTACTS_TABS,

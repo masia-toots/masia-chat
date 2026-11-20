@@ -133,7 +133,7 @@ describe("DevicesCard with a conversation: the room's other devices", () => {
   it('shows each role with its own chip and icon', async () => {
     await mount([session()]);
     const [masia, guardian] = roomRows();
-    expect(q('.msec-chip', masia!)!.textContent).toBe('Assistant');
+    expect(q('.msec-chip', masia!)!.textContent).toBe('Masia');
     expect(q('.mdev-icon svg', masia!)!.getAttribute('data-icon')).toBe('masia');
     expect(q('.msec-chip', guardian!)!.textContent).toBe('Guardian');
     expect(q('.mdev-icon svg', guardian!)!.getAttribute('data-icon')).toBe('guardian');

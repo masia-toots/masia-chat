@@ -2,7 +2,13 @@
  * The `msg:*` events of the current host protocol: what a client sends (commands) and what the server
  * pushes (events). Plain JSON shapes; the codec (`./codec`) turns them into bytes for the `Transport`.
  */
-import type { MessageImagePayload, MessageReaction, SendableMessageType } from './messages.js';
+import type {
+  BroadcastMention,
+  MessageImagePayload,
+  MessageReaction,
+  ReplyToPreview,
+  SendableMessageType,
+} from './messages.js';
 
 // ── Client → server (commands) ───────────────────────────────────────────────
 
@@ -26,6 +32,11 @@ export interface MsgSendEvent {
      * then; the host stores a metadata row (unread counts, a push without text), never the text.
      */
     e2eeEnvelopeId?: string;
+    /**
+     * With `e2eeEnvelopeId`: the message called the room with `@all` / `@online` (ADR-201). The one bit the host
+     * learns of an encrypted text — it raises the push to a mention; it never learns the text or an addressee.
+     */
+    broadcast?: BroadcastMention;
   };
 }
 
@@ -96,12 +107,16 @@ export interface MsgNewEvent {
     /** All attached image URLs (multi-image). mediaUrl mirrors the first. */
     mediaUrls?: string[] | null;
     replyToId?: string | null;
+    /** The parent's words, joined by the server when `replyToId` is set (see `ReplyToPreview`). */
+    replyToPreview?: ReplyToPreview | null;
     createdAt: string;
     modified?: { text: string; ruleName: string | null } | undefined;
     /** See `MessengerMessage.e2eeEnvelopeId`. */
     e2eeEnvelopeId?: string;
     /** See `MessengerMessage.serviceMeta`. */
     serviceMeta?: unknown;
+    /** See `MessengerMessage.broadcast`. */
+    broadcast?: BroadcastMention;
   };
 }
 
@@ -169,6 +184,28 @@ export interface MsgErrorEvent {
   };
 }
 
+/**
+ * The host's ONE unread number for a room, pushed to every socket of the person it belongs to after a delivery
+ * to them and after they read (ADR-201). A client never derives a count from `msg:new`: it seeds its store from
+ * the inbox preview (`unreadCount` · `unreadMentions`) and replaces a room's numbers with each of these.
+ *
+ * It rides its own topic (`UNREAD_EVENT_TOPIC`), not `MESSENGER_EVENT_TOPIC`: it is about the person's whole
+ * inbox, so it must reach a client that has no conversation open.
+ */
+export interface UnreadUpdateEvent {
+  type: 'unread:update';
+  payload: {
+    conversationId: string;
+    /** Messages the person has not read in this room (0 when fully read). */
+    unreadCount: number;
+    /**
+     * The subset of `unreadCount` that calls the person by name: their own `@tag`, `@all`, `@online`, or an
+     * encrypted row that carries a broadcast flag. Always `<= unreadCount`.
+     */
+    unreadMentions: number;
+  };
+}
+
 export type MsgServerEvent =
   | MsgNewEvent
   | MsgSentEvent
@@ -177,4 +214,5 @@ export type MsgServerEvent =
   | MsgDeletedEvent
   | MsgEditedEvent
   | MsgReactedEvent
-  | MsgErrorEvent;
+  | MsgErrorEvent
+  | UnreadUpdateEvent;

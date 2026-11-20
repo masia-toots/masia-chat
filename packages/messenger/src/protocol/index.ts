@@ -4,14 +4,17 @@
  * redefines them.
  */
 export type {
+  BroadcastMention,
   DeliveryStatus,
   MessageImagePayload,
   MessageReaction,
   MessageType,
   MessengerMessage,
+  ReplyToPreview,
   SendableMessageType,
   TypingIndicator,
 } from './messages.js';
+export { BROADCAST_MENTIONS, isBroadcastMention } from './messages.js';
 export type {
   ConversationType,
   EntityType,
@@ -39,6 +42,7 @@ export type {
   MsgServerEvent,
   MsgTypingClientEvent,
   MsgTypingEvent,
+  UnreadUpdateEvent,
 } from './events.js';
 export type {
   ConversationSecurityState,
@@ -77,6 +81,7 @@ export {
   parseConnectionState,
   parseJsonBody,
   parseMsgServerEvent,
+  UNREAD_EVENT_TOPIC,
 } from './codec.js';
 export type {
   E2eeDeletePayload,

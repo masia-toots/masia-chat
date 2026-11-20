@@ -22,8 +22,11 @@
  *
  * Uses WebCrypto Ed25519 (browsers, Workers and Node alike); no third-party dependency.
  */
+import { verifyEd25519 } from './ed25519.js';
 import type { DeviceListEntry } from './relay-api.js';
 import { DeviceRole, isDeviceRole, MAX_DEVICES_PER_USER } from './vocabulary.js';
+
+export { ed25519 } from './ed25519.js';
 
 /** The format tag inside the signed bytes. Generic on purpose: no product name in a wire string. */
 export const DEVICE_LIST_FORMAT = 'mls-device-list/v1';
@@ -111,16 +114,6 @@ export function deviceListSigningBytes(
   );
 }
 
-/** A copy on its own ArrayBuffer (what WebCrypto's `BufferSource` type asks for). */
-function own(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
-  return new Uint8Array(bytes);
-}
-
-/** The Ed25519 algorithm identifier WebCrypto takes. */
-export function ed25519(): { name: string } {
-  return { name: 'Ed25519' };
-}
-
 /** A list as an owner signs it: the entries, the version and the owner, plus the signature. */
 export interface SignedDeviceListFields {
   readonly userId: string;
@@ -151,16 +144,9 @@ export async function verifyDeviceListSignature(
     throw new DeviceListError(DEVICE_LIST_ERRORS.BAD_SIGNATURE);
   }
   const bytes = deviceListSigningBytes(list.userId, list.version, list.devices);
-  let valid: boolean;
-  try {
-    const key = await crypto.subtle.importKey('raw', own(identityKey), ed25519(), false, [
-      'verify',
-    ]);
-    valid = await crypto.subtle.verify(ed25519(), key, own(list.signature), own(bytes));
-  } catch {
-    // A 32-byte string that is not a point on the curve: no signature verifies under it.
-    valid = false;
+  // A 32-byte string that is not a point on the curve verifies nothing (`verifyEd25519`).
+  if (!(await verifyEd25519(identityKey, list.signature, bytes))) {
+    throw new DeviceListError(DEVICE_LIST_ERRORS.BAD_SIGNATURE);
   }
-  if (!valid) throw new DeviceListError(DEVICE_LIST_ERRORS.BAD_SIGNATURE);
   return bytes;
 }

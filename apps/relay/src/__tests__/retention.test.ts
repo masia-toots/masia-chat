@@ -1,16 +1,26 @@
-import { RELAY_BACKLOG_RETENTION_SECONDS } from '@masia/relay';
+import {
+  IDENTITY_REQUEST_LIMIT_WINDOW_MS,
+  IdentityRequestPurpose,
+  RELAY_BACKLOG_RETENTION_SECONDS,
+  SEALED_IDENTITY_TTL_MS,
+} from '@masia/relay';
 import { describe, expect, it, vi } from 'vitest';
 import { purgeExpired, startRetentionJob } from '../retention.js';
 import {
+  b64,
   type Caller,
   countRows,
   databaseSuite,
   expectStatus,
+  holderProofOf,
+  identityRequestDraft,
   keyPackageItem,
   sealed,
 } from './support/harness.js';
 
 const ROOM = 'room-1';
+const IDENTITY_REQUESTS = '/users/me/identity-requests';
+const HALF_A_DAY_MS = 12 * 60 * 60 * 1000;
 const MS_PER_SECOND = 1000;
 const RETENTION_MS = RELAY_BACKLOG_RETENTION_SECONDS * MS_PER_SECOND;
 /** A little more than the retention: what a row is aged by to fall out of it. */
@@ -66,6 +76,8 @@ databaseSuite('the retention job (ADR-117 §2; review round 1, 2026-10-10)', (ha
       handshakes: 0,
       envelopes: 0,
       keyPackages: 0,
+      sealedIdentities: 0,
+      identityRequests: 0,
     });
   });
 
@@ -154,6 +166,59 @@ databaseSuite('the retention job (ADR-117 §2; review round 1, 2026-10-10)', (ha
     expect(left.map((row) => row.id)).not.toContain(expiring);
     expect(left.map((row) => row.id)).not.toContain(consumed);
     expect(left).toHaveLength(2); // the third ordinary package and the last-resort one stay
+  });
+
+  it('keeps an identity request while a rule needs it, then purges it with its sealed key (ADR-218 §2 step 6)', async () => {
+    const clock = harness().clock;
+    const db = harness().db;
+    const phone = await harness().enrol('alice', 'alice-phone');
+    expectStatus(
+      await phone.put('/devices/me/holder-proof', {
+        holderProof: holderProofOf('alice', 'alice-phone'),
+      }),
+      200,
+    );
+    const t0 = clock.now();
+    // Left to expire: it still counts against the daily cap, so it stays a whole window.
+    const watch = await harness().registerUnlisted('alice', 'alice-watch');
+    const pair = await identityRequestDraft(watch, IdentityRequestPurpose.PAIR);
+    expectStatus(await watch.post(IDENTITY_REQUESTS, pair.body), 201);
+
+    clock.advance(HALF_A_DAY_MS);
+    const t1 = clock.now();
+    // Approved: its sealed key waits a day for the device that asked.
+    const tablet = await harness().enrol('alice', 'alice-tablet');
+    const backfill = await identityRequestDraft(tablet, IdentityRequestPurpose.BACKFILL);
+    const asked = await tablet.post(IDENTITY_REQUESTS, backfill.body);
+    expectStatus(asked, 201);
+    const approvedId = asked.json<{ id: string }>().id;
+    expectStatus(
+      await phone.post(`${IDENTITY_REQUESTS}/${approvedId}/approve`, {
+        listVersion: 2,
+        sealed: { enc: b64('x'.repeat(32)), ciphertext: b64('sealed identity key') },
+      }),
+      200,
+    );
+
+    const swept = async (at: number) => purgeExpired(db, { now: at });
+    const left = async () => countRows('SELECT count(*) AS n FROM identity_requests', db);
+
+    expect(await swept(t1)).toMatchObject({ sealedIdentities: 0, identityRequests: 0 });
+    expect(await left()).toBe(2);
+
+    // A day after the first: the expired request goes, the approved one (younger) stays sealed.
+    expect(await swept(t0 + IDENTITY_REQUEST_LIMIT_WINDOW_MS)).toMatchObject({
+      sealedIdentities: 0,
+      identityRequests: 1,
+    });
+    expect(await left()).toBe(1);
+
+    // A day after the approval: its sealed key is cleared and the row goes.
+    expect(await swept(t1 + SEALED_IDENTITY_TTL_MS)).toMatchObject({
+      sealedIdentities: 1,
+      identityRequests: 1,
+    });
+    expect(await left()).toBe(0);
   });
 
   describe('the periodic job', () => {

@@ -46,6 +46,20 @@ describe('Bubble: content', () => {
     expect(q('.hub-msg-reply-text')!.textContent).toBe('earlier');
   });
 
+  it('words a deleted parent instead of quoting it, and makes the quote a control only when the view can jump', () => {
+    const message = makeMessage({ replyToId: 'p', replyToPreview: { senderName: 'Grace', text: '', deleted: true } });
+    const tree = renderUi(bubble({ message }));
+    expect(q('.hub-msg-reply-text')!.textContent).toBe('Message deleted');
+    expect(q('.hub-msg-reply')!.getAttribute('role')).toBeNull();
+    const onReplyTap = vi.fn();
+    tree.rerender(bubble({ message, onReplyTap }));
+    const quote = q('.hub-msg-reply')!;
+    expect(quote.getAttribute('role')).toBe('button');
+    click(quote);
+    expect(onReplyTap).toHaveBeenCalledWith('p');
+    expect(q('.hub-msg-row')!.getAttribute('data-msg-id')).toBe(message.id);
+  });
+
   it('marks an edited message and draws read ticks on an own message only', () => {
     const message = makeMessage({ senderId: 'me', editedAt: '2026-10-10T11:00:00.000Z', deliveryStatus: 'READ' });
     renderUi(bubble({ message }));
@@ -62,6 +76,63 @@ describe('Bubble: content', () => {
   it('prefers the edited-by-rule text when the server modified it', () => {
     renderUi(bubble({ message: makeMessage({ text: 'raw', modified: { text: 'shown', ruleName: null } }) }));
     expect(q('.hub-msg-text')!.textContent).toBe('shown');
+  });
+});
+
+describe('Bubble: the sender\'s face and colour (ADR-199 §8)', () => {
+  const ada = { id: 'ada', name: 'ada lovelace', color: '#f97316' };
+  const other = makeMessage({ senderId: 'ada', senderName: 'Ada' });
+
+  it('opens the first bubble of someone else\'s run with their initial on their colour, and carries the colour on the row', () => {
+    renderUi(bubble({ message: other, isOwn: false, showAvatar: true, showSenderName: true, sender: ada }));
+    const avatar = q('.hub-msg-avatar')!;
+    expect(avatar.textContent).toBe('A');
+    expect(avatar.querySelector('img')).toBeNull();
+    expect(q('.hub-msg-row')!.style.getPropertyValue('--sender-color')).toBe('#f97316');
+    // The name is coloured through the same property (the stylesheet reads `--sender-color`); the edge is a class.
+    expect(q('.hub-msg-sender')!.textContent).toBe('Ada');
+    expect(q('.hub-msg')!.classList.contains('hub-msg--edged')).toBe(true);
+    expect(q('.hub-msg-avatar-gap')).toBeNull();
+  });
+
+  it('draws the picture when the host resolved one', () => {
+    renderUi(bubble({ message: other, isOwn: false, showAvatar: true, sender: { ...ada, avatarUrl: 'https://x/ada.png' } }));
+    expect(q<HTMLImageElement>('.hub-msg-avatar img')!.getAttribute('src')).toBe('https://x/ada.png');
+    expect(q('.hub-msg-avatar')!.textContent).toBe('');
+  });
+
+  it('keeps the column empty on the later bubbles of the run, so the text lines up', () => {
+    renderUi(bubble({ message: other, isOwn: false, showAvatar: false, sender: ada }));
+    expect(q('.hub-msg-avatar')).toBeNull();
+    expect(q('.hub-msg-avatar-gap')).toBeTruthy();
+    expect(q('.hub-msg')!.classList.contains('hub-msg--edged')).toBe(true);
+  });
+
+  it('never on an own bubble: no avatar, no column, no colour, no edge', () => {
+    renderUi(bubble({ message: makeMessage({ senderId: 'me' }), isOwn: true, showAvatar: true, sender: { id: 'me', name: 'Me', color: '#22c55e' } }));
+    expect(q('.hub-msg-avatar')).toBeNull();
+    expect(q('.hub-msg-avatar-gap')).toBeNull();
+    expect(q('.hub-msg-row')!.style.getPropertyValue('--sender-color')).toBe('');
+    expect(q('.hub-msg')!.classList.contains('hub-msg--edged')).toBe(false);
+  });
+
+  it('a sticker keeps the avatar but not the edge; an unknown sender gets neither column nor colour', () => {
+    const sticker = makeMessage({ senderId: 'ada', messageType: 'STICKER', text: 'bounce|pop', mediaUrl: '/stickers/1.png' });
+    const tree = renderUi(bubble({ message: sticker, isOwn: false, showAvatar: true, sender: ada }));
+    expect(q('.hub-msg-avatar')).toBeTruthy();
+    expect(q('.hub-msg')!.classList.contains('hub-msg--edged')).toBe(false);
+    expect(q('.hub-msg-row')!.style.getPropertyValue('--sender-color')).toBe('#f97316');
+
+    tree.rerender(bubble({ message: other, isOwn: false, showAvatar: true }));
+    expect(q('.hub-msg-avatar')).toBeNull();
+    expect(q('.hub-msg-avatar-gap')).toBeNull();
+    expect(q('.hub-msg-row')!.style.getPropertyValue('--sender-color')).toBe('');
+  });
+
+  it('a deleted message keeps its place in the run (the column stays)', () => {
+    renderUi(bubble({ message: makeMessage({ senderId: 'ada', deletedAt: '2026-10-10T11:00:00.000Z' }), isOwn: false, showAvatar: true, sender: ada }));
+    expect(q('.hub-msg--deleted')).toBeTruthy();
+    expect(q('.hub-msg-avatar')).toBeTruthy();
   });
 });
 
@@ -207,6 +278,17 @@ describe('Bubble: pictures and documents', () => {
 
     click(images[1]!);
     expect(onImageOpen).toHaveBeenCalledWith(['blob:a', 'blob:b'], 1);
+  });
+
+  it('draws each picture as a button named by its place, and two identical pictures still open their own place', () => {
+    const onImageOpen = vi.fn();
+    const same = { dataUrl: 'data:image/png;base64,AAA', mimeType: 'image/png' };
+    renderUi(bubble({ message: makeMessage({ images: [same, same] }), onImageOpen }));
+    const doors = qa<HTMLButtonElement>('.hub-msg-images button.hub-msg-image-open');
+    expect(doors.map((d) => d.getAttribute('aria-label'))).toEqual(['Open picture 1', 'Open picture 2']);
+    expect(doors.every((d) => d.type === 'button')).toBe(true);
+    click(doors[1]!);
+    expect(onImageOpen).toHaveBeenCalledWith([same.dataUrl, same.dataUrl], 1);
   });
 
   it('shows the pictures the host already knows with no placeholder at all', () => {

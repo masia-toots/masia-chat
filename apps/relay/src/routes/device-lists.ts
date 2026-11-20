@@ -124,11 +124,16 @@ export function registerDeviceListRoutes(app: FastifyInstance, deps: RouteDeps):
     },
     async (request, reply) => {
       const { body } = request;
-      const stored = await putDeviceList(db, principalOf(request).userId, {
-        version: body.version,
-        devices: body.devices,
-        signature: fromBase64(body.signature, MAX_SIGNATURE_BYTES),
-      });
+      const stored = await putDeviceList(
+        db,
+        principalOf(request).userId,
+        {
+          version: body.version,
+          devices: body.devices,
+          signature: fromBase64(body.signature, MAX_SIGNATURE_BYTES),
+        },
+        deps.operatorUserId,
+      );
       return reply.code(201).send(toDeviceListDto(stored));
     },
   );

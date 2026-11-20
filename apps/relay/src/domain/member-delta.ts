@@ -1,6 +1,5 @@
 import {
   type AdminScope,
-  administersUser,
   DeviceRole,
   findListedDevice,
   guardsUser,
@@ -64,31 +63,27 @@ function hasDuplicates(values: readonly string[]): boolean {
 }
 
 /**
- * Who is making the change: the rights the token carries, and the device the commit comes from
- * (`null` for the relay's own change, the creator joining a new group, which removes nobody).
+ * Who is making the change: the rights the token carries (`NO_ADMIN_SCOPE` for the relay's own
+ * change, the creator joining a new group, which removes nobody).
  */
 export interface Remover {
   readonly scope: AdminScope;
-  readonly device: { readonly userId: string; readonly role: DeviceRole } | null;
 }
 
 /**
- * May `remover` take a GUARDIAN leaf of `minorUserId` out of a room? The relay's copy of the
- * engine's `mayRemoveGuardian`, so the two cannot disagree about who wins:
- *  - a family admin OF THAT MINOR (`adminOf`), from any device; or
- *  - another GUARDIAN device of the same minor, driven by a token that guards the minor
- *    (`guardianOf`): one guardian replacing or retiring another guardian leaf of the same child.
+ * May `remover` take a GUARDIAN leaf of `minorUserId` out of a room? Only a token that GUARDS that
+ * minor (`guardianOf`), from any device: the minor's own administrator, or another guardian device of
+ * the same child (which only such a token can drive). It is the set that may register a guardian
+ * device on the child, and the relay's copy of the engine's `mayRemoveGuardian`, whose «admin of X»
+ * is an administrator of X as a MINOR.
+ *
+ * Not `adminOf` (security review 2026-11-15, B2): that names every other member of a family the
+ * caller administers, a child who is only a plain member there included, so the admin of a club the
+ * child joined could take the parents' guardian leaf out. Administering is not guarding.
  * A child, another adult, or an admin of a different family gets the same refusal.
  */
 export function mayRemoveGuardian(remover: Remover, minorUserId: string): boolean {
-  if (administersUser(remover.scope, minorUserId)) return true;
-  const device = remover.device;
-  return (
-    device !== null &&
-    device.role === DeviceRole.GUARDIAN &&
-    device.userId === minorUserId &&
-    guardsUser(remover.scope, minorUserId)
-  );
+  return guardsUser(remover.scope, minorUserId);
 }
 
 /**
@@ -97,8 +92,9 @@ export function mayRemoveGuardian(remover: Remover, minorUserId: string): boolea
  *
  *  - REMOVING a GUARDIAN device needs `mayRemoveGuardian` (ADR-117 §4: a child's device cannot
  *    take the parent's leaf out of the room). The claims and the user lists come from the token,
- *    never the body; an admin of family A is refused for family B's guardian, with the very answer
- *    a non-admin gets.
+ *    never the body; an admin who does not guard the child (family A's admin for family B's
+ *    guardian, or an admin of the child who is not a guardian of the child) is refused with the very
+ *    answer a non-admin gets.
  *  - ADDING a device needs three things to be true of the device the committer names:
  *      · it is not revoked;
  *      · it is on its owner's CURRENT signed device list, with the same role and signature key

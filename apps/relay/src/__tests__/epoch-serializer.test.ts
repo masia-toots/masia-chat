@@ -345,7 +345,7 @@ databaseSuite('the epoch serializer (ADR-117 §2)', (harness) => {
       expect(contradictory.json()).toMatchObject({ error: RelayErrorCode.INVALID_MEMBER_DELTA });
     });
 
-    it('lets only a FAMILY_ADMIN of the child remove a GUARDIAN device (403 for the child)', async () => {
+    it('lets only a guardian of the child (guardianOf) remove a GUARDIAN device (403 for the child)', async () => {
       const kid = await harness().enrol('kid', 'kid-phone');
       // The guardian leaf carries the CHILD's user id; mum's token drives it (guardianOf: [kid]).
       const mum = await harness().enrol('kid', 'mum-guardian', DeviceRole.GUARDIAN, {
@@ -369,7 +369,7 @@ databaseSuite('the epoch serializer (ADR-117 §2)', (harness) => {
 
       const adminDad = await harness().caller(
         { userId: 'dad', deviceId: 'dad-phone' },
-        { adminOf: ['kid'] },
+        { adminOf: ['kid'], guardianOf: ['kid'] },
       );
       const removeByAdmin = await adminDad.post(
         `/conversations/${ROOM}/handshakes`,
@@ -436,7 +436,7 @@ databaseSuite('the epoch serializer (ADR-117 §2)', (harness) => {
       });
     });
 
-    describe("the admin's reach is adminOf, not the FAMILY_ADMIN marker (security review 2026-10-10 §4)", () => {
+    describe("the admin's reach is guardianOf, not the FAMILY_ADMIN marker nor adminOf (security reviews 2026-10-10 §4, 2026-11-15 B2)", () => {
       // Two families share a room (a group chat across households). Dad A is the admin of family A.
       async function twoFamilies() {
         const kidB = await harness().enrol('kid-b', 'kid-b-phone');
@@ -452,12 +452,15 @@ databaseSuite('the epoch serializer (ADR-117 §2)', (harness) => {
 
       type Families = Awaited<ReturnType<typeof twoFamilies>>;
 
-      /** Dad A, holding a token with this `adminOf`, tries to remove family B's guardian. */
-      async function removeGuardianAs(families: Families, adminOf: readonly string[]) {
+      /** Dad A, holding a token with these lists, tries to remove family B's guardian. */
+      async function removeGuardianAs(
+        families: Families,
+        claims: { adminOf: readonly string[]; guardianOf?: readonly string[] },
+      ) {
         const { guardianB, dadA } = families;
         const admin = await harness().caller(
           { userId: dadA.userId, deviceId: dadA.deviceId },
-          { adminOf },
+          claims,
         );
         return admin.post(
           `/conversations/${ROOM}/handshakes`,
@@ -488,18 +491,42 @@ databaseSuite('the epoch serializer (ADR-117 §2)', (harness) => {
         expect(await harness().roomEpoch(ROOM)).toBe(2);
       });
 
-      it("lets the admin whose adminOf lists the child family B's guardian guards remove it (201)", async () => {
-        const reply = await removeGuardianAs(await twoFamilies(), ['kid-b']);
+      it("lets the admin whose guardianOf lists the child family B's guardian guards remove it (201)", async () => {
+        const reply = await removeGuardianAs(await twoFamilies(), {
+          adminOf: ['kid-b'],
+          guardianOf: ['kid-b'],
+        });
         expectStatus(reply, 201);
         expect(reply.json<Receipt>().epoch).toBe(3);
       });
 
       it('gives the bare marker (an admin of nobody) no reach at all (403)', async () => {
-        expectStatus(await removeGuardianAs(await twoFamilies(), []), 403);
+        expectStatus(await removeGuardianAs(await twoFamilies(), { adminOf: [] }), 403);
       });
 
       it("gives no reach over a child's guardian to an admin of the guardian adult only (403)", async () => {
-        expectStatus(await removeGuardianAs(await twoFamilies(), ['mum-b']), 403);
+        expectStatus(await removeGuardianAs(await twoFamilies(), { adminOf: ['mum-b'] }), 403);
+      });
+
+      // Security review 2026-11-15 (B2): `adminOf` names every other member of a family the caller
+      // administers, a child who is only a guest there included. Only `guardianOf` (a child in a family
+      // the caller administers) says whose guardian devices the caller answers for: the same set that
+      // may register one. Administering is not guarding.
+      it("refuses an admin whose adminOf lists the child but whose guardianOf does not (403), with the very answer a non-admin gets", async () => {
+        const families = await twoFamilies();
+        const nonAdmin = await families.kidB.post(
+          `/conversations/${ROOM}/handshakes`,
+          commitBody({
+            room: ROOM,
+            expectedEpoch: 2,
+            sender: families.kidB,
+            removed: [families.guardianB],
+          }),
+        );
+        const reply = await removeGuardianAs(families, { adminOf: ['kid-b'] });
+        expectStatus(reply, 403);
+        expect(reply.json()).toEqual(nonAdmin.json());
+        expect(await harness().roomEpoch(ROOM)).toBe(2);
       });
     });
 

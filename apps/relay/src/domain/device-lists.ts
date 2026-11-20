@@ -191,10 +191,24 @@ export async function putDeviceList(
   db: Database,
   userId: string,
   proposal: DeviceListProposal,
+  /** The account that owns every ASSISTANT device (config.ts); `null`: nobody may list one. */
+  operatorUserId: string | null,
 ): Promise<StoredDeviceList> {
   const ids = proposal.devices.map((entry) => entry.id);
   if (new Set(ids).size !== ids.length) {
     throw new RelayError(RelayErrorCode.VALIDATION_FAILED, 'A device appears twice in the list.');
+  }
+  // «Assistant» means the operator, everywhere (ADR-212 §13): an ASSISTANT entry on anyone else's list
+  // would let a member wear Masia's badge in a room. Device registration refuses it already; a list is
+  // signed by its owner alone, so the relay refuses it here too, before anything is stored.
+  if (
+    userId !== operatorUserId &&
+    proposal.devices.some((entry) => entry.role === DeviceRole.ASSISTANT)
+  ) {
+    throw new RelayError(
+      RelayErrorCode.DEVICE_LIST_ENTRY_INVALID,
+      "Only the operator's list may carry an ASSISTANT entry.",
+    );
   }
   // The room binding is an ASSISTANT's alone (canon §2, `mls-device-list/v1`): a person's device bound
   // to one conversation would be a statement the verifier refuses, so the relay refuses it first.

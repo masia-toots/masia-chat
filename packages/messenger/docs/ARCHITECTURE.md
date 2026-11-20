@@ -72,8 +72,8 @@ as JSON bytes on the topic `msg:`, link state on `messenger:connection`, command
 builds Commit and Welcome locally → `POST /conversations/:id/handshakes` with the epoch it built on and the
 member change it declares → in **one transaction** the relay locks the conversation row (`SELECT … FOR UPDATE`):
 stale epoch → `409 {currentEpoch}` and the client rebases; fifth lost race in a row → `429`; then the cleartext
-MLSMessage header must match the room (`422`), the declared change must be allowed (guardian removal only by an
-admin of that user, no revoked or unlisted device, each Add names a key package this committer claimed), then
+MLSMessage header must match the room (`422`), the declared change must be allowed (guardian removal only by a
+guardian of that user, `guardianOf`; no revoked or unlisted device; each Add names a key package this committer claimed), then
 the handshake is stored and the epoch advances. Members read `GET /conversations/:id/handshakes`, compare the
 declared change with what the **decrypted** commit really does, and reject a lie.
 
@@ -102,7 +102,8 @@ target._
   accepts an Add only if the new leaf is in the owner's signed list, so a server cannot slip in a ghost device.
   The relay stores the list, requires the next version to be exactly +1, and never signs one.
 - **Guardian.** A parent's device on a child's account carries a badge shown to everyone in the room. Only an
-  admin of that child may remove it (the token's `adminOf` lists the child); the relay refuses anyone else.
+  admin of that child as a minor may remove it (the token's `guardianOf` lists the child; `adminOf` alone is not
+  enough); the relay refuses anyone else.
 - **Masia as a device.** Her leaf is per conversation, in the group only while her mode is not silent; her keys
   live in a custody service outside the messenger's database and API process (in the reference host, a
   separate worker that talks to the relay as the operator principal's devices).

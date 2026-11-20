@@ -7,11 +7,10 @@ question or a collaboration. A security problem goes to the address below, throu
 | Name | Role | Email | GitHub |
 | --- | --- | --- | --- |
 | Eugene Riabchenko | Founder, lead maintainer | mothership@masia.to | masia-toots |
-| Галюня | Co-founder | — | — |
 
-`masia-toots` is the project's GitHub organisation, not a personal account. `—` means the person publishes no
-contact. The playground suggests these people in its empty contacts list from `demo/contacts.json`; a test
-keeps the two files equal, so when a contact changes, change both in one commit.
+`masia-toots` is the project's GitHub organisation, not a personal account. The playground suggests these
+people in its empty contacts list from `demo/contacts.json`; a test keeps the two files equal, so when a
+contact changes, change both in one commit.
 
 **Security reports:** security@masia.to, with `SECURITY` in the subject.
 

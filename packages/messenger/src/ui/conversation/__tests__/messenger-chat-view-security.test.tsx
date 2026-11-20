@@ -211,6 +211,7 @@ describe('the security UI at 390 and at 1440', () => {
                 svg<warning>
               span.msec-banner__text "This room is waiting for a key refresh — messages will arrive once it completes."
             div.hub-mchat-msgs
+              div.hub-mchat-history-edge
               div.hub-mchat-inner
                 div.
                   div.
@@ -220,10 +221,11 @@ describe('the security UI at 390 and at 1440', () => {
                   button.[aria-haspopup=true][aria-expanded=false]
                     span.
                       svg<more>
-            div.
-              textarea.
-              button.
-                svg<send>"
+            div.hub-mchat-compose
+              div.
+                textarea.
+                button.
+                  svg<send>"
     `);
   });
 });

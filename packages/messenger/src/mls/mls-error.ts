@@ -76,6 +76,16 @@ export const MlsEngineErrorCode = {
    * parent action).
    */
   ASSISTANT_ADD_FORBIDDEN: 'ASSISTANT_ADD_FORBIDDEN',
+  /**
+   * The other direction (ADR-212 §6): an Add of a minor's first device, or of any GUARDIAN leaf, to a room
+   * that holds an ASSISTANT leaf, by someone who does not administer that minor.
+   */
+  MINOR_ADD_FORBIDDEN: 'MINOR_ADD_FORBIDDEN',
+  /**
+   * An ASSISTANT leaf of a user other than the operator (ADR-212 §13: «assistant» means the operator,
+   * everywhere). Checked for every leaf the engine reads, before its signed list.
+   */
+  ASSISTANT_NOT_OPERATOR: 'ASSISTANT_NOT_OPERATOR',
   /** The relay-served member delta is not the delta of the decrypted commit (review §4). */
   MEMBER_DELTA_MISMATCH: 'MEMBER_DELTA_MISMATCH',
 

@@ -97,6 +97,8 @@ export function createFakeContactsDirectory(
     displayName: display.name,
     avatarUrl: display.avatarUrl ?? null,
     isPrimaryMember: false,
+    familyId: null,
+    familyName: null,
     isPinned: false,
     pinnedAt: null,
     note: null,

@@ -26,9 +26,37 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* A row pulled right by a thumb (the reply swipe, canon shell §6c) travels past the box's edge; clipped here it adds no sideways scroll
+     to the thread's scroller while it moves. `clip`, not `hidden`: nothing becomes a scroll container, nothing is focus-scrolled. */
+  overflow-x: clip;
+  overflow-clip-margin: 6px; /* the tapped-quote flash ring (3 px) of a bubble flush with the edge is not cut */
 }
 
-.hub-mchat-loading { display: flex; justify-content: center; padding: 8px; }
+/* The top edge of the thread, watched for older history (`historyEdgeRef`). It takes no room: it
+   reaches down over the first rows by exactly the margin it gives back, so the list lays out as if it
+   were not there. The reach is how near the top a reader gets before the next page is asked for
+   (about the old «50 px from the top», in the list's own text size). */
+.hub-mchat-history-edge {
+  --msg-history-reach: 3em;
+  flex: none;
+  height: var(--msg-history-reach);
+  margin-bottom: calc(-1 * var(--msg-history-reach));
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Takes no room either: the spinner shows over the top rows while a page is on its way, so the thread
+   does not drop by its height under the reader when loading starts and jump back when the page lands. */
+.hub-mchat-loading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  flex: none;
+  height: 0;
+  display: flex;
+  justify-content: center;
+}
+.hub-mchat-loading > * { margin-top: 8px; }
 
 .hub-mchat-empty { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .hub-mchat-empty-art { font-size: 40px; }
@@ -72,9 +100,47 @@
 .hub-msg-sender {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--mantine-color-cyan-4);
+  /* The sender's own colour (ADR-199 §8, `--sender-color` on the row); the theme's accent when the host gave none. */
+  color: var(--sender-color, var(--mantine-color-cyan-4));
   margin-bottom: 3px;
   width: calc(var(--msg-sender-name-ch, 0) * 1ch);
+}
+
+/* ── Sender avatar + colour edge (ADR-199 §8) ─────────────────────────────── */
+/* A 3 px edge in the sender's colour on someone else's bubble — groups and 1:1 alike, light and dark the same
+   colour; never on a sticker (the bubble is transparent there) and never on an own bubble. The radius of the
+   corner it meets stays, so the edge follows the bubble's shape. */
+.hub-msg--other.hub-msg--edged {
+  border-inline-start: 3px solid var(--sender-color);
+  padding-inline-start: 11px;
+}
+/* The sender's picture, or an initial on their colour, on the first bubble of a run; the gap keeps the
+   column on the run's later bubbles so every bubble of the run starts at the same x. */
+.hub-msg-avatar,
+.hub-msg-avatar-gap {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  align-self: flex-start;
+}
+.hub-msg-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--sender-color, var(--mantine-color-dark-4));
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+.hub-msg-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .hub-msg-reply {
@@ -87,12 +153,53 @@
 .hub-msg-reply-text { font-size: 12px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .hub-msg-text { white-space: pre-wrap; }
+/* A web address in any bubble (`text-links.tsx`, founder 2026-11-07 «лінка має бути лінкою»): the bubble's own text
+   colour, underlined so it reads as a link on the accent gradient and on glass alike; a long address breaks
+   anywhere instead of widening the bubble. */
+.hub-msg-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+/* An `@tag` of a real participant (ADR-199 §5): accent in their bubble; `is-me` (it names the
+   reader) is a pill so the eye finds it in a long thread. In my own bubble (an accent gradient)
+   the accent would vanish, so the chip keeps the bubble's text colour and shows as a pill. */
+.hub-msg-mention { color: rgb(var(--msg-accent-rgb)); font-weight: 600; }
+.hub-msg-mention.is-me {
+  padding: 0 0.35em;
+  border-radius: 999px;
+  background: rgba(var(--msg-accent-rgb), 0.2);
+}
+.hub-msg--own .hub-msg-mention {
+  color: var(--msg-bubble-own-fg);
+  padding: 0 0.35em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
 
 /* What stands in for a sticker the host does not draw. */
 .hub-msg-sticker-placeholder { font-size: 12px; font-style: italic; opacity: 0.7; }
 
 .hub-msg-images { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
-.hub-msg-images img { max-width: 220px; max-height: 220px; border-radius: 12px; cursor: zoom-in; display: block; }
+.hub-msg-images img { max-width: 220px; max-height: 220px; border-radius: 12px; display: block; }
+
+/* A picture is a DOOR into the viewer: a button (keyboard, a name) with no chrome of its own — the
+   picture is the whole affordance. `max-width: 100%` so a wide picture never pushes the bubble. */
+.hub-msg-image-open {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  line-height: 0;
+  cursor: zoom-in;
+}
+.hub-msg-image-open:focus-visible {
+  outline: 2px solid var(--mantine-color-cyan-5);
+  outline-offset: 2px;
+}
 
 /* A picture still on its way (the host's resolve) — holds its place so the bubble does not jump. */
 .hub-msg-image-pending {
@@ -132,6 +239,18 @@
 .hub-msg-check { font-size: 10.5px; }
 .hub-msg-check--read { color: var(--mantine-color-cyan-3); }
 
+/* ── A message of mine that never left ───────────────────────────────────── */
+/* Said in words, not only in colour, and the retry is a real 44px target. */
+.hub-msg-unsent {
+  display: flex; align-items: center; gap: 6px; justify-content: flex-end;
+  margin-top: 3px; font-size: 10.5px; color: var(--mantine-color-red-4);
+}
+.hub-msg-unsent-retry,
+.hub-msg-unsent-delete {
+  font: inherit; cursor: pointer; color: inherit; text-decoration: underline;
+  border: 0; background: none; padding: 2px 4px; min-height: 22px;
+}
+
 .hub-msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .hub-msg-react-pill {
   font: inherit; font-size: 12px; cursor: pointer;
@@ -158,15 +277,39 @@
 @keyframes hub-typing { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
 
 /* ── Editing banner ─────────────────────────────────────────────────────── */
-.hub-mchat-editing {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 14px; font-size: 12px; color: var(--mantine-color-cyan-3);
+/* ── The intent strip: what the next send does (reply · edit), one line above the composer ───── */
+.hub-mchat-intent {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 44px; padding: 0 6px 0 14px; font-size: 12px; color: var(--mantine-color-cyan-3);
   border-top: 1px solid var(--mantine-color-dark-4);
   background: color-mix(in srgb, var(--mantine-color-cyan-9) 14%, transparent);
 }
-.hub-mchat-editing span { display: inline-flex; align-items: center; gap: 6px; }
-.hub-mchat-editing button { background: transparent; border: 0; color: var(--mantine-color-dimmed); cursor: pointer; font-size: 14px; }
+.hub-mchat-intent-what { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.hub-mchat-intent-who { font-weight: 600; white-space: nowrap; }
+.hub-mchat-intent-quote { opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The ✕ is a finger target (≥ 44 px, ADR-199 К6), not a glyph: the strip's own height comes from it. */
+.hub-mchat-intent button {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px;
+  background: transparent; border: 0; color: var(--mantine-color-dimmed); cursor: pointer; font-size: 14px; flex: none;
+}
+/* The composer wrapper only listens for Esc; it takes no place in the column. */
+.hub-mchat-compose { display: contents; }
+
+/* A tappable quote (the view can scroll to the parent). */
+.hub-msg-reply--tap { cursor: pointer; }
+.hub-msg-reply--tap:focus-visible { outline: 2px solid rgba(var(--msg-accent-rgb), 0.6); outline-offset: 1px; }
+.hub-msg-reply-text--deleted { font-style: italic; }
+
+/* The parent of a tapped quote glows once (`REPLY_FLASH_MS` in the view = this duration). */
+.hub-msg--flash > .hub-msg,
+.hub-msg--flash.hub-msg { animation: hub-msg-flash 1.2s ease-out 1; }
+@keyframes hub-msg-flash {
+  0%, 40% { box-shadow: 0 0 0 3px rgba(var(--msg-accent-rgb), 0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--msg-accent-rgb), 0); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .hub-typing-dot { animation: none; }
+  .hub-msg--flash > .hub-msg,
+  .hub-msg--flash.hub-msg { animation: none; box-shadow: 0 0 0 3px rgba(var(--msg-accent-rgb), 0.55); }
 }

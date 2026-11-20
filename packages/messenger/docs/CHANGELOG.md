@@ -10,6 +10,14 @@ For the **why** behind each change, and the order things happened in, read [`log
 
 ### Added
 
+- `hooks/outbox-rules.ts`: the outbox rules written once (`settleOutboxEntries`, `failWaitingEntries`,
+  `weaveOutboxRows`, `OutboxHistoryRules`, `OutboxRowEntry`), exported so a host's own outbox follows them in the
+  same store; the plaintext outbox now calls them. `UnsentRow` (the "not sent" strip with Retry and Delete),
+  exported so a host-drawn bubble shows the same strip.
+- `MessengerChatView` (and `P2PChatBody`) take `renderServiceRow({ message, isOwn })`: the host draws one of its
+  own `SYSTEM` rows its own way (a node), or keeps the bubble (`undefined`). The first host row-slot of the thread.
+- `formatMessageTime(iso)`: the thread's one time format (the bubble's), exported so a host-drawn row shows its time
+  the same way.
 - The open repository's root (`tools/open-split/scaffold/`: workspace manifest, lint config with the same
   boundary, `README.md`, `SECURITY.md`), an assembly that builds the open repository outside the host from a
   committed revision (`tools/open-split/assemble.mjs`) and a scan of the set's history under the forbidden-token
@@ -235,6 +243,20 @@ For the **why** behind each change, and the order things happened in, read [`log
   (section 9.7 already said it does not); `ARCHITECTURE.md` no longer calls the built `mls/` and `ui/` target;
   the interop README and test comments say K1 and S1 are green; two contradictory comments in `useMessenger`
   about who receives `msg:new` now agree with the code.
+- Older history in `MessengerChatView` loaded only on a `scroll` event of the list itself near its top. In a
+  host where an ancestor scrolls instead of the list, or where the first page is too short to scroll, that
+  event never came, and the reader was left on the first page. The view now watches a zero-height edge at the
+  top of the thread with an `IntersectionObserver`: it asks for the page above whenever that edge is in sight,
+  rebuilds the observer after each page so a thread that still does not fill the screen keeps filling, asks
+  once per page, and does not re-ask from the same place after a load that brought nothing until the reader
+  scrolls away and back. The reader's place is kept by the first message's own position on the box that
+  actually scrolls, and the history spinner no longer takes room. Tested in
+  `src/ui/conversation/__tests__/messenger-chat-view.test.tsx`.
+- The relay let any admin whose token's `adminOf` named a child remove that child's GUARDIAN device from a
+  room. `adminOf` names every other member of a family the caller administers, a child who is only a plain
+  member there included, so the admin of another household could take the parents' leaf out. Removing a
+  GUARDIAN device now needs a token whose `guardianOf` lists the child (the set that may register one), from
+  any device, which is also the engine's rule. Tested in `apps/relay/src/__tests__/epoch-serializer.test.ts`.
 
 ## [0.0.1] - 2026-10-10
 

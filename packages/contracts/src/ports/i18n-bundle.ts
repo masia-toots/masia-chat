@@ -68,8 +68,23 @@ export const MESSENGER_I18N_KEYS = [
   'chat.messageActionsClose',
   'chat.privateEmpty',
   'chat.startChat',
+  // A message of mine that never left, and the way to send it again.
+  'chat.notSent',
+  'chat.retrySend',
   'chat.editingMessage',
   'chat.sticker',
+  // The name of a picture's thumbnail as a button that opens the viewer («Open picture 2»; `n` is its place in its message).
+  'chat.openImage',
+  // the reply intent (internal ADR-199 §1–2): the menu row, the strip above the composer, a deleted parent
+  'chat.reply',
+  'chat.replyingTo',
+  'chat.replyDeleted',
+  // ADR-199 §5: the @-mention popover's name and the assistant's row in it.
+  'chat.mentionHint',
+  'chat.masiaName',
+  // ADR-201: the two rows that call the room (`@all`, `@online`), offered only in a group of three or more.
+  'chat.mentionAll',
+  'chat.mentionOnline',
   // common
   'common.cancel',
   'common.close',
@@ -81,8 +96,13 @@ export const MESSENGER_I18N_KEYS = [
   // bank
   'bank.channels',
   'bank.lockedChannel',
-  'bank.pinned',
-  'bank.recent',
+  // ADR-201 (chat-attention К2): a chip's unread mark, said in words for the accessible name (plurals: `count`).
+  'bank.unread',
+  'bank.unreadMentions',
+  'bank.muted',
+  // polishing П16: the delimiter before another family's people — «Інша родина» (+ the family's name), and the group's name in words.
+  'bank.otherFamily',
+  'bank.otherFamilyNamed',
   // circles
   'circles.title',
   'circles.family',
@@ -120,7 +140,6 @@ export const MESSENGER_I18N_KEYS = [
   'circles.errToggleFailed',
   // contacts
   'contacts.people',
-  'contacts.newRequests',
   'contacts.noRequests',
   'contacts.searchPlaceholder',
   'contacts.searchLabel',

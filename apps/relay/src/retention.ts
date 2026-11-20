@@ -1,4 +1,9 @@
-import { RELAY_BACKLOG_RETENTION_SECONDS } from '@masia/relay';
+import {
+  IDENTITY_REQUEST_LIMIT_WINDOW_MS,
+  REJECTED_IDENTITY_REQUEST_TTL_MS,
+  RELAY_BACKLOG_RETENTION_SECONDS,
+  SEALED_IDENTITY_TTL_MS,
+} from '@masia/relay';
 import type { Queryable } from './db.js';
 
 /**
@@ -6,7 +11,9 @@ import type { Queryable } from './db.js';
  * archive: handshakes and envelopes older than `RELAY_BACKLOG_RETENTION_SECONDS` are deleted, and
  * so are key packages nobody can use any more (expired, or consumed that long ago). A device that
  * was away longer than the retention finds `oldestAvailableSeq` above its cursor and recovers from
- * the group state instead of paging (the client's rule, packages/messenger).
+ * the group state instead of paging (the client's rule, packages/messenger). Identity requests
+ * (ADR-218) go too, once no rule needs them, and a sealed identity key nobody fetched is cleared a
+ * day after approval. The sweep reports counts only, never a row.
  *
  * Deleting never disturbs ordering: seq numbers come from per-conversation counters
  * (`conversation_e2ee.handshake_seq` / `envelope_seq`) that only move forward, so a deleted row's
@@ -28,6 +35,10 @@ export interface PurgeResult {
   readonly handshakes: number;
   readonly envelopes: number;
   readonly keyPackages: number;
+  /** Sealed identity keys nobody fetched, cleared `SEALED_IDENTITY_TTL_MS` after approval. */
+  readonly sealedIdentities: number;
+  /** Identity requests deleted (ADR-218 §2 step 6). */
+  readonly identityRequests: number;
 }
 
 /** Deletes, batch by batch, the rows of `table` that `where` (with the cutoff as `$1`) selects. */
@@ -57,11 +68,29 @@ export interface PurgeOptions {
   readonly batch?: number;
 }
 
+/**
+ * Which identity requests a sweep deletes (ADR-218 §2 step 6): a request is kept while it still counts
+ * against the account's daily cap (`IDENTITY_REQUEST_LIMIT_WINDOW_MS` from creation: deleting an
+ * expired one sooner would hand the cap back), an approved one while its sealed key may still be
+ * fetched (`SEALED_IDENTITY_TTL_MS`), and a rejected one while the person's devices may still say so
+ * (`REJECTED_IDENTITY_REQUEST_TTL_MS`). Then it goes, nonces and transfer key with it.
+ */
+const IDENTITY_REQUEST_PURGE_WHERE = `created_at <= $1
+  AND (approved_at IS NULL OR approved_at <= $2)
+  AND (rejected_at IS NULL OR rejected_at <= $3)`;
+
 /** One sweep: everything past retention, and every key package nobody can use. */
 export async function purgeExpired(db: Queryable, options: PurgeOptions): Promise<PurgeResult> {
   const batch = options.batch ?? RETENTION_DELETE_BATCH;
   const now = new Date(options.now);
   const cutoff = new Date(options.now - RELAY_BACKLOG_RETENTION_SECONDS * MS_PER_SECOND);
+  const sealedCutoff = new Date(options.now - SEALED_IDENTITY_TTL_MS);
+  // Cleared even on a row kept longer (a request is purged only once every rule above lets it go).
+  const sealed = await db.query(
+    `UPDATE identity_requests SET sealed_enc = NULL, sealed_ct = NULL
+     WHERE sealed_ct IS NOT NULL AND approved_at <= $1`,
+    [sealedCutoff],
+  );
   return {
     handshakes: await deleteInBatches(db, 'mls_handshakes', 'created_at < $1', [cutoff], batch),
     envelopes: await deleteInBatches(db, 'envelopes', 'created_at < $1', [cutoff], batch),
@@ -72,6 +101,18 @@ export async function purgeExpired(db: Queryable, options: PurgeOptions): Promis
       'key_packages',
       'not_after <= $1 OR consumed_at < $2',
       [now, cutoff],
+      batch,
+    ),
+    sealedIdentities: sealed.rowCount ?? 0,
+    identityRequests: await deleteInBatches(
+      db,
+      'identity_requests',
+      IDENTITY_REQUEST_PURGE_WHERE,
+      [
+        new Date(options.now - IDENTITY_REQUEST_LIMIT_WINDOW_MS),
+        sealedCutoff,
+        new Date(options.now - REJECTED_IDENTITY_REQUEST_TTL_MS),
+      ],
       batch,
     ),
   };

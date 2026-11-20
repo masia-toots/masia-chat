@@ -13,6 +13,7 @@ export {
   MlsEngineErrorCode,
   type AddedMember,
   type AddInput,
+  type AddRuleSubject,
   type AddResult,
   type AdoptPendingCommitResult,
   type CreateGroupInput,
@@ -49,6 +50,8 @@ export {
   RELAY_BACKLOG_RETENTION_SECONDS,
 } from './constants.js';
 export { createTsMlsEngine } from './ts-mls-engine.js';
+/** ADR-212 §5: the late verdict a host without guardian facts owes an unchecked commit. */
+export { assertAddRule } from './validator.js';
 export { decodeCredentialIdentity, encodeCredentialIdentity } from './credential.js';
 export {
   APPROVAL_CODE_DIGITS,
@@ -56,6 +59,20 @@ export {
   formatApprovalCode,
   parseApprovalCode,
 } from './approval-code.js';
+/** ADR-218: the identity transfer's client half (its bytes and checks are `@masia/contracts/wire`'s). */
+export {
+  createPairingNonce,
+  createTransferKeyPair,
+  openIdentity,
+  pairingChoices,
+  sealIdentity,
+  signHolderProof,
+  signIdentityRebind,
+  signIdentityRequest,
+  type OpenedIdentity,
+  type SealedIdentity,
+  type TransferKeyPair,
+} from './identity-transfer.js';
 export {
   DEVICE_LIST_ERRORS,
   DEVICE_LIST_FORMAT,
@@ -67,4 +84,5 @@ export {
   type DeviceListErrorCode,
   type DeviceListPin,
   type SignedDeviceList,
+  type VerifyDeviceListOptions,
 } from './device-list.js';

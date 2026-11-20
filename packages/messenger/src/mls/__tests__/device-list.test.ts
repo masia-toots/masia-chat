@@ -92,4 +92,25 @@ describe('verifyDeviceList', () => {
       operator.sign(1, [{ ...assistant, conversationId: undefined }], 'operator'),
     ).rejects.toMatchObject({ code: DEVICE_LIST_ERRORS.MALFORMED });
   });
+
+  it('refuses an ASSISTANT entry on a list that is not the operator’s (ADR-212 §13)', async () => {
+    const alice = await owner();
+    const assistant: ListedDevice = {
+      deviceId: 'asst-1',
+      role: DeviceRole.ASSISTANT,
+      signatureKey: key(3),
+      conversationId: 'conv-1',
+    };
+    // Alice signs her own list well: only the reader who knows the operator can tell it is wrong.
+    const signed = await alice.sign(1, [phone, assistant]);
+    await expect(
+      verifyDeviceList('alice', signed, alice.firstPin, { operatorUserId: 'operator' }),
+    ).rejects.toMatchObject({ code: DEVICE_LIST_ERRORS.MALFORMED });
+    // The operator's own list with the same entry passes.
+    const operator = await owner();
+    const operatorList = await operator.sign(1, [assistant], 'operator');
+    await expect(
+      verifyDeviceList('operator', operatorList, operator.firstPin, { operatorUserId: 'operator' }),
+    ).resolves.toBeDefined();
+  });
 });

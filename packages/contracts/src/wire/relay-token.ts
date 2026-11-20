@@ -93,7 +93,8 @@ export interface AdminScope {
   readonly adminOf: readonly string[];
   /**
    * The MINORS the actor is a guardian of (the `guardianOf` claim): the accounts on which this admin
-   * may enrol and drive a GUARDIAN device. Never the admin, never another adult. A subset of
+   * may enrol and drive a GUARDIAN device, and the only ones whose GUARDIAN devices it may remove from
+   * a room (`adminOf` alone is not enough). Never the admin, never another adult. A subset of
    * `adminOf` in practice, kept as its own claim so that administering an adult never lets anyone
    * plant a silent guardian leaf in that adult's rooms.
    */

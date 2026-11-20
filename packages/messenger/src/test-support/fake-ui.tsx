@@ -143,10 +143,14 @@ export function FakeMenu(props: MenuSlotProps): ReactElement | null {
 
 /** A scroller with the structure the screens style (`.hscroll > .hscroll__viewport`) and no arrows. */
 export function FakeHScroll(props: HScrollSlotProps): ReactElement {
-  const { children, className, viewportClassName, viewportRef, endMore, role, 'aria-label': ariaLabel } = props;
+  const { children, className, viewportClassName, viewportRef, endMore, arrowsInGutter, role, 'aria-label': ariaLabel } = props;
   return createElement(
     'div',
-    { className: `hscroll${className ? ` ${className}` : ''}`, 'data-end-more': endMore ? 'true' : undefined },
+    {
+      className: `hscroll${className ? ` ${className}` : ''}`,
+      'data-end-more': endMore ? 'true' : undefined,
+      'data-arrows': arrowsInGutter ? 'gutter' : undefined,
+    },
     createElement(
       'div',
       {

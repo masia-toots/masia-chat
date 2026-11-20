@@ -311,7 +311,7 @@ describe('People: circles as filter chips', () => {
     expect(tree.ui.notices).toEqual([
       'They are already family — that membership lives in the family profile.',
       'Become contacts first — send a request.',
-      'Could not change the «Family» circle.',
+      'Couldn’t change the “Family” circle.',
     ]);
   });
 });

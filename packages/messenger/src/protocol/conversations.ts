@@ -16,6 +16,11 @@ export interface ParticipantPreview {
   personId: string;
   name: string;
   avatarUrl?: string | null;
+  /**
+   * The person's chosen accent colour (internal ADR-199 §8): a hex of the host's palette, or null = the host
+   * derives one from the id. The package never derives it — the host hands the resolved colour to the view.
+   */
+  accentColor?: string | null;
   type?: string;
   /**
    * The USER behind the participant, when the row carries one (ADR-115, К3).
@@ -64,7 +69,16 @@ export interface MessengerConversationPreview {
   groupId: string | null;
   group: GroupPreview | null;
   lastMessage: LastMessagePreview | null;
+  /** Unread messages in this room for the requesting person — the host's one number (`unread:update` moves it live). */
   unreadCount: number;
+  /** The subset of `unreadCount` that calls the person by name (own `@tag`, `@all`, `@online`). `<= unreadCount`. */
+  unreadMentions: number;
+  /**
+   * The requesting person's mute of this room (ISO instant), or `null` when they never muted it. The room is
+   * muted while the instant is in the future; a past instant means «not muted any more». A far-future
+   * sentinel means «until unmuted». Mute silences the push and the chip, never the unread count itself.
+   */
+  mutedUntil: string | null;
   participantCount: number;
   participants: ParticipantPreview[];
   createdAt: string;
@@ -97,6 +111,13 @@ export interface MessengerConversationPreview {
    * encrypted. The host owns the reason and feature vocabulary; this package only shows the key.
    */
   plaintextFeaturesOff?: PlaintextFeaturesOffNote | null;
+  /**
+   * Masia in this room is a GUEST: the room is end-to-end encrypted and no one family's — its people belong to more
+   * than one family, or a family's guest or contributor sits among them (a visitor is not the family) — so she
+   * answers from the room alone, with no family's knowledge, and the family of the person who switched her on pays. A client says so in the room header while she is in the room (`masiaMode` not `SILENT`). Optional:
+   * absent = `false` (a host without guest rooms).
+   */
+  masiaGuest?: boolean;
 }
 
 /** Why server features are off in a room, as the host words it (see `plaintextFeaturesOff`). */

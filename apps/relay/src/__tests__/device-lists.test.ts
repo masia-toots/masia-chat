@@ -99,6 +99,29 @@ databaseSuite('device lists (ADR-117 §2a)', (harness) => {
     });
   });
 
+  it("refuses an ASSISTANT entry on a list that is not the operator's (ADR-212 §13), and stores it for the operator", async () => {
+    const alice = await harness().enrol('alice', 'alice-phone'); // stored version 1
+    const spoof = await alice.post(
+      '/users/me/device-list',
+      signedList('alice', 2, [
+        entry('alice-phone'),
+        listEntry('alice-masia', DeviceRole.ASSISTANT, 'room-1'),
+      ]),
+    );
+    expectStatus(spoof, 422);
+    expect(spoof.json()).toMatchObject({ error: RelayErrorCode.DEVICE_LIST_ENTRY_INVALID });
+    expect((await alice.get('/users/alice/device-list')).json<ListBody>().version).toBe(1);
+
+    const operator = await harness().enrol(OPERATOR, 'masia-seat-1', DeviceRole.ASSISTANT);
+    const listed = await operator.get(`/users/${OPERATOR}/device-list`);
+    const version = listed.json<ListBody>().version;
+    const own = await operator.post(
+      '/users/me/device-list',
+      signedList(OPERATOR, version + 1, [listEntry('masia-seat-2', DeviceRole.ASSISTANT, 'room-2')]),
+    );
+    expectStatus(own, 201);
+  });
+
   it('accepts only the next version: a repeat is a 409 carrying the version on file', async () => {
     const alice = await harness().enrol('alice', 'alice-phone'); // stored version 1
     const repeat = await alice.post(

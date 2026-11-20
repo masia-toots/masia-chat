@@ -1,0 +1,71 @@
+/* The @-completion list. Rides above its positioning parent (the composer / the host's field); the
+   parent already stays above the on-screen keyboard, so the list does too. Six rows of 44 px at
+   most, then it scrolls. Colours come from the `--msg-*` tokens the conversation root carries. */
+.msg-mention-popover {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(100% + 4px);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(6 * 44px + 8px);
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--msg-bg);
+  color: var(--msg-fg);
+  border: 1px solid var(--msg-frosted-border);
+  border-radius: var(--msg-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.msg-mention-popover__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: calc(var(--msg-radius) - 4px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.msg-mention-popover__option.is-active { background: rgba(var(--msg-accent-rgb), 0.18); }
+.msg-mention-popover__avatar {
+  flex: none;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.msg-mention-popover__avatar--initial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--msg-accent-on);
+  background: rgb(var(--msg-accent-rgb));
+}
+/* `@all` / `@online`: no face, a glyph on a soft accent disc (ADR-201). */
+.msg-mention-popover__avatar--room {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(var(--msg-accent-rgb));
+  background: rgba(var(--msg-accent-rgb), 0.18);
+}
+.msg-mention-popover__name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.msg-mention-popover__tag {
+  flex: none;
+  font-family: var(--msg-font-mono);
+  font-size: 0.85em;
+  opacity: 0.7;
+}

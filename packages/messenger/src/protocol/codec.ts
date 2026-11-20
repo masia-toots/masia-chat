@@ -16,6 +16,12 @@ import type { MsgClientEvent, MsgServerEvent } from './events.js';
 /** Topic prefix of every server event; the event's own `type` starts with it. */
 export const MESSENGER_EVENT_TOPIC = 'msg:';
 
+/**
+ * Topic prefix of the person-level unread event (`unread:update`, ADR-201). A separate topic from
+ * `MESSENGER_EVENT_TOPIC` because it concerns every room, not the open one; `parseMsgServerEvent` decodes both.
+ */
+export const UNREAD_EVENT_TOPIC = 'unread:';
+
 /** Topic carrying `{"connected": boolean}` — the live link, current value first. */
 export const MESSENGER_CONNECTION_TOPIC = 'messenger:connection';
 
@@ -35,6 +41,7 @@ const SERVER_EVENT_TYPES: ReadonlySet<string> = new Set<MsgServerEvent['type']>(
   'msg:edited',
   'msg:reacted',
   'msg:error',
+  'unread:update',
 ]);
 
 const textDecoder = new TextDecoder();

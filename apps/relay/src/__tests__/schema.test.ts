@@ -42,6 +42,15 @@ describe('the relay schema holds no plaintext (ADR-117: the server cannot read a
     expect(envelope).toMatch(/ciphertext\s+Bytes/);
   });
 
+  it('stores a sealed identity key as opaque bytes, and no private key in the clear (ADR-218 §1)', () => {
+    const schema = schemaWithoutComments();
+    const request = /model IdentityRequest \{([^}]*)\}/s.exec(schema)?.[1] ?? '';
+    expect(request).toMatch(/sealedEnc\s+Bytes\?/);
+    expect(request).toMatch(/sealedCt\s+Bytes\?/);
+    // Public keys, nonces and signatures only: nothing the relay holds is a secret it could use.
+    expect(schema).not.toMatch(/private|secret|seed/i);
+  });
+
   it('has no GroupInfo: external joins are out of scope in phase 1 (security review 2026-10-10 §2)', () => {
     const schema = schemaWithoutComments();
     expect(schema).not.toMatch(/GROUP_INFO|groupInfo|group_info/);
@@ -129,6 +138,111 @@ databaseSuite('the live relay database holds no plaintext', (harness) => {
        WHERE table_schema = 'public' AND table_name = 'mls_handshakes' AND column_name = 'member_delta_json'`,
     );
     expect(rows).toEqual([{ type: 'jsonb', nullable: 'YES' }]);
+  });
+
+  it('keeps an identity request as bytes and timestamps, with its rules as CHECKs (ADR-218)', async () => {
+    const { rows } = await harness().db.query<{ column: string; type: string; nullable: string }>(
+      `SELECT column_name AS "column", data_type AS type, is_nullable AS nullable
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'identity_requests'`,
+    );
+    const typeOf = (column: string) => rows.find((row) => row.column === column)?.type;
+    expect(rows.map((row) => row.column).sort()).toEqual(
+      [
+        'id',
+        'user_id',
+        'device_id',
+        'purpose',
+        'transfer_key',
+        'commitment',
+        'request_signature',
+        'challenger_device_id',
+        'holder_nonce',
+        'device_nonce',
+        'list_version',
+        'sealed_enc',
+        'sealed_ct',
+        'created_at',
+        'expires_at',
+        'challenged_at',
+        'revealed_at',
+        'approved_at',
+        'rejected_at',
+      ].sort(),
+    );
+    for (const column of [
+      'transfer_key',
+      'commitment',
+      'request_signature',
+      'holder_nonce',
+      'device_nonce',
+      'sealed_enc',
+      'sealed_ct',
+    ]) {
+      expect(typeOf(column), column).toBe('bytea');
+    }
+
+    const checks = await harness().db.query<{ name: string }>(
+      `SELECT conname AS name FROM pg_constraint
+       WHERE conrelid = 'identity_requests'::regclass AND contype = 'c'`,
+    );
+    expect(checks.rows.map((row) => row.name).sort()).toEqual([
+      'identity_requests_commitment_check',
+      'identity_requests_list_version_check',
+      'identity_requests_sealed_check',
+    ]);
+
+    const proof = await harness().db.query<{ type: string; nullable: string }>(
+      `SELECT data_type AS type, is_nullable AS nullable FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'holder_proof'`,
+    );
+    expect(proof.rows).toEqual([{ type: 'bytea', nullable: 'YES' }]);
+  });
+
+  it('keeps the identity-key resets as an audit row with no key in it, one open ticket per account (ADR-218 §6)', async () => {
+    const { rows } = await harness().db.query<{ column: string; type: string }>(
+      `SELECT column_name AS "column", data_type AS type FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'identity_resets'`,
+    );
+    expect(rows.map((row) => row.column).sort()).toEqual(
+      [
+        'id',
+        'user_id',
+        'actor',
+        'actor_device_id',
+        'reason',
+        'first_device_id',
+        'revoked_device_ids',
+        'released_key_sha256',
+        'list_versions_deleted',
+        'requests_deleted',
+        'holder_proofs_cleared',
+        'key_packages_deleted',
+        'created_at',
+        'pinned_at',
+        'superseded_at',
+      ].sort(),
+    );
+    // The released key is named by its digest only.
+    expect(rows.find((row) => row.column === 'released_key_sha256')?.type).toBe('bytea');
+
+    const checks = await harness().db.query<{ name: string }>(
+      `SELECT conname AS name FROM pg_constraint
+       WHERE conrelid = 'identity_resets'::regclass AND contype = 'c'`,
+    );
+    expect(checks.rows.map((row) => row.name).sort()).toEqual([
+      'identity_resets_closed_check',
+      'identity_resets_reason_check',
+      'identity_resets_ticket_check',
+    ]);
+
+    const indexes = await harness().db.query<{ definition: string }>(
+      `SELECT indexdef AS definition FROM pg_indexes
+       WHERE schemaname = 'public' AND indexname = 'identity_resets_open_ticket_key'`,
+    );
+    expect(indexes.rows[0]?.definition).toMatch(
+      /UNIQUE INDEX .*\(user_id\) WHERE \(\(first_device_id IS NOT NULL\) AND \(pinned_at IS NULL\) AND \(superseded_at IS NULL\)\)/,
+    );
   });
 
   it('records who claimed which key package, one row per (package, claimer)', async () => {

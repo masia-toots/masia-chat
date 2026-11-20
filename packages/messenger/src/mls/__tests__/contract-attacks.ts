@@ -9,6 +9,7 @@ import {
 } from '../constants.js';
 import { DeviceRole, MlsEngineErrorCode } from '../mls-engine.js';
 import type { MemberDelta } from '../mls-engine.js';
+import { assertAddRule } from '../validator.js';
 import type { Adversary, KeyPackageForgery } from './support/adversary.js';
 import { expectAnyEngineError, expectCode } from './support/expect-code.js';
 import { buildRoom, EMPTY_DELTA, guardianDevice, must, pair, trio } from './support/fixtures.js';
@@ -670,6 +671,161 @@ export function defineAttackContract(subject: ContractSubject): void {
             forged.memberDelta,
           );
         }
+      });
+    });
+
+    // --- ADR-212: the other direction, «assistant» = operator, a receiver without facts -------------------------
+    describe('ADR-212: a minor joins a room with Masia only by their admin; the assistant is the operator; no facts, no exile', () => {
+      const CONVERSATION = 'conv-1';
+      async function masiaRoom() {
+        const world = await newWorld();
+        const mom = await world.device('mom', 'm1');
+        const bob = await world.device('bob', 'b1');
+        const kid = await world.device('kid', 'k1');
+        world.makeMinor('kid');
+        world.makeAdmin('mom', 'kid');
+        const room = await Room.create(world, mom, CONVERSATION);
+        await room.add(mom, [bob]);
+        const masia = await world.device('masia', 'masia1', DeviceRole.ASSISTANT, {
+          conversationId: CONVERSATION,
+        });
+        await room.add(mom, [masia]);
+        const kidBundle = await world.engine.createKeyPackage(kid.keys);
+        return { world, room, mom, bob, kid, masia, kidBundle };
+      }
+
+      it("a child's device added to a room with Masia by a non-admin: refused when sending and by every receiver", async () => {
+        const { world, room, mom, bob, masia, kidBundle } = await masiaRoom();
+        const adversary = await adversaryOf();
+        await expectCode(
+          () => world.engine.add({ state: room.state(bob), keyPackages: [kidBundle.keyPackage] }),
+          MlsEngineErrorCode.MINOR_ADD_FORBIDDEN,
+        );
+        const forged = await adversary.forceAdd(room.state(bob), [kidBundle.keyPackage]);
+        await expectRefusedEverywhere(
+          room,
+          [mom, masia],
+          forged.commit,
+          MlsEngineErrorCode.MINOR_ADD_FORBIDDEN,
+          forged.memberDelta,
+        );
+      });
+
+      it("the child's admin brings the child into a room with Masia", async () => {
+        const { world, room, mom, kid } = await masiaRoom();
+        await room.add(mom, [kid]);
+        expect(world.engine.members(room.state(mom)).map((m) => m.userId)).toContain('kid');
+        room.expectConverged();
+      });
+
+      it('a member without guardian facts receives a forbidden Add of Masia, stays in the epoch, and the late verdict refuses it', async () => {
+        const world = await newWorld();
+        const mom = await world.device('mom', 'm1');
+        const kid = await world.device('kid', 'k1');
+        const stranger = await world.device('stranger', 's1');
+        world.makeMinor('kid');
+        world.makeAdmin('mom', 'kid');
+        const room = await Room.create(world, mom, CONVERSATION);
+        for (const newcomer of [kid, stranger]) await room.add(mom, [newcomer]);
+        const masia = await world.device('masia', 'masia1', DeviceRole.ASSISTANT, {
+          conversationId: CONVERSATION,
+        });
+        const bundle = await world.engine.createKeyPackage(masia.keys);
+        const forged = await (await adversaryOf()).forceAdd(room.state(stranger), [bundle.keyPackage]);
+
+        const before = room.state(mom);
+        const outcome = await world.engine.processCommit({
+          state: before,
+          commit: forged.commit,
+          servedMemberDelta: forged.memberDelta,
+          guardianFactsUnavailable: true,
+        });
+        expect(outcome.removedFromGroup).toBe(false);
+        expect(world.engine.epoch(outcome.state)).toBe(world.engine.epoch(before) + 1n);
+        const subject = must(outcome.addRuleUnchecked, 'the unchecked Add');
+        expect(subject.committer.userId).toBe('stranger');
+        expect(subject.added.map((device) => device.role)).toEqual([DeviceRole.ASSISTANT]);
+        await expectCode(
+          () => assertAddRule(world.policy, subject),
+          MlsEngineErrorCode.ASSISTANT_ADD_FORBIDDEN,
+        );
+        // With facts, the same commit is still refused, as before (a proven violation).
+        await expectCode(
+          () =>
+            world.engine.processCommit({
+              state: before,
+              commit: forged.commit,
+              servedMemberDelta: forged.memberDelta,
+            }),
+          MlsEngineErrorCode.ASSISTANT_ADD_FORBIDDEN,
+        );
+      });
+
+      // Security review 2026-11-15 (MED/LOW): the leaves cannot show a child without an account or the
+      // children switch, so the host holds a judged Add of Masia to its facts too. It needs the committer.
+      it('a member with guardian facts receives an Add of Masia the rule lets through: the result names what it judged', async () => {
+        const world = await newWorld();
+        const mom = await world.device('mom', 'm1');
+        const bob = await world.device('bob', 'b1');
+        const room = await Room.create(world, mom, CONVERSATION);
+        await room.add(mom, [bob]);
+        const masia = await world.device('masia', 'masia1', DeviceRole.ASSISTANT, {
+          conversationId: CONVERSATION,
+        });
+        const bundle = await world.engine.createKeyPackage(masia.keys);
+        const built = await world.engine.add({
+          state: room.state(mom),
+          keyPackages: [bundle.keyPackage],
+        });
+
+        const outcome = await world.engine.processCommit({
+          state: room.state(bob),
+          commit: built.commit,
+          servedMemberDelta: built.memberDelta,
+        });
+
+        expect(outcome.addRuleUnchecked).toBeUndefined();
+        const judged = must(outcome.addRuleChecked, 'the judged Add');
+        expect(judged.committer.userId).toBe('mom');
+        expect(judged.added.map((device) => device.role)).toEqual([DeviceRole.ASSISTANT]);
+        expect(judged.roomBefore.map((device) => device.userId).sort()).toEqual(['bob', 'mom']);
+        expect(judged.roomAfter.map((device) => device.userId).sort()).toEqual([
+          'bob',
+          'masia',
+          'mom',
+        ]);
+      });
+
+      it('an ASSISTANT leaf of a user who is not the operator: refused by an engine that knows the operator, sending and receiving', async () => {
+        const world = await newWorld();
+        const strict = await subject.factory({ ...world.context, operatorUserId: 'masia' });
+        const { room, devices } = await buildRoom(world, 2, CONVERSATION);
+        const [alice, bob] = pair(devices);
+        const impostor = await world.device(bob.keys.identity.userId, 'fake-masia', DeviceRole.ASSISTANT, {
+          conversationId: CONVERSATION,
+        });
+        const bundle = await world.engine.createKeyPackage(impostor.keys);
+        await expectCode(
+          () => strict.add({ state: room.state(alice), keyPackages: [bundle.keyPackage] }),
+          MlsEngineErrorCode.ASSISTANT_NOT_OPERATOR,
+        );
+        // An engine that does not know the operator builds it; one that does refuses it on receive.
+        const lax = await world.engine.add({ state: room.state(bob), keyPackages: [bundle.keyPackage] });
+        await expectCode(
+          () =>
+            strict.processCommit({
+              state: room.state(alice),
+              commit: lax.commit,
+              servedMemberDelta: lax.memberDelta,
+            }),
+          MlsEngineErrorCode.ASSISTANT_NOT_OPERATOR,
+        );
+        // The operator's own assistant passes the same engine.
+        const real = await world.device('masia', 'masia1', DeviceRole.ASSISTANT, {
+          conversationId: CONVERSATION,
+        });
+        const realBundle = await world.engine.createKeyPackage(real.keys);
+        await strict.add({ state: room.state(alice), keyPackages: [realBundle.keyPackage] });
       });
     });
 

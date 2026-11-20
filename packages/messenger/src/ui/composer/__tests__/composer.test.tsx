@@ -55,9 +55,28 @@ describe('Composer', () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it('seeds the box with the initial draft once', () => {
+  it('seeds the box with the initial draft once, focused, caret at the end', () => {
     renderUi(<Composer onSend={() => undefined} initialDraft="to edit" />);
     expect(box().value).toBe('to edit');
+    expect(document.activeElement).toBe(box());
+    expect(box().selectionStart).toBe('to edit'.length);
+  });
+
+  it('asks to recall the last message on ArrowUp only while the box is empty', () => {
+    const onRecallLast = vi.fn();
+    renderUi(<Composer onSend={() => undefined} onRecallLast={onRecallLast} />);
+    pressKey(box(), 'ArrowUp');
+    expect(onRecallLast).toHaveBeenCalledTimes(1);
+    typeInto(box(), 'x');
+    pressKey(box(), 'ArrowUp');
+    expect(onRecallLast).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets ArrowUp through when nobody listens for a recall', () => {
+    renderUi(<Composer onSend={() => undefined} />);
+    const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+    box().dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it('signals typing on the edges only: start once, stop on empty, stop on send', () => {

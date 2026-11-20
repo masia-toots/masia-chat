@@ -1,59 +1,23 @@
 // @vitest-environment jsdom
 /**
  * The channel bank against the package's fakes (a fake scroller without arrows, a fake menu and
- * person chip). What is proven here is the bank's OWN behaviour:
- *   · structure — the pinned and recent strips are scroller slots, the doors stand outside them;
- *   · plates — the live one, the locked ones, the face slot;
- *   · the lazy window grows when its end sentinel comes into view, until nothing is left;
- *   · the overflow latch folds fast and unfolds only with real slack;
- *   · the picker chip and the fold report.
- * The arrows, the wheel and the edge fade belong to the host's real scroller and are proven there.
+ * person chip). What is proven here is the bank's OWN behaviour (Ф2.4, 2026-11-03 — ONE strip):
+ *   · structure — ONE scroller slot holds every chip; there is no hairline, no door, no picker chip, no seat slot;
+ *   · order — the strip is `bankStrip`'s (active first, Masia second, family, pins, then recency);
+ *   · chips — the active one is marked, every chip keeps its name as the accessible name + hover title (none draws it),
+ *     the locked ones, the face slot;
+ *   · the lazy window grows when its end sentinel comes into view, until nothing is left, and never cuts the fixed head.
+ * The arrow, the wheel and the edge fade belong to the host's real scroller and are proven there.
  *
- * jsdom has no layout: geometry is faked per class (`.chbank` and the two scrollers);
- * `ResizeObserver` and `IntersectionObserver` are fakes the test fires by hand.
+ * jsdom has no layout: `IntersectionObserver` is a fake the test fires by hand.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { assistantContact, contactsOf, familyContact, personContact } from '../../../test-support/fake-contacts.js';
 import { cleanupUi, click, q, qa, renderUi } from '../../../test-support/fake-ui.js';
-import { ChannelBank, type ChannelBankProps } from '../channel-bank.js';
+import { ChannelBank, chipAttention, type ChannelBankProps } from '../channel-bank.js';
 
 const WINDOW = 12; // the fake env's `bankWindow.initial`
-
-const geo = {
-  bank: { cw: 400, sw: 400 },
-  recent: { cw: 200, sw: 200 },
-  pinned: { cw: 120, sw: 120 },
-};
-const kindOf = (el: Element): keyof typeof geo | null =>
-  el.classList.contains('chbank')
-    ? 'bank'
-    : el.classList.contains('chbank__recent')
-      ? 'recent'
-      : el.classList.contains('chbank__pinned')
-        ? 'pinned'
-        : null;
-
-class FakeRO {
-  static all = new Set<FakeRO>();
-  constructor(private cb: () => void) {
-    FakeRO.all.add(this);
-  }
-  observe() {
-    FakeRO.all.add(this);
-  }
-  unobserve() {}
-  disconnect() {
-    FakeRO.all.delete(this);
-  }
-  fire() {
-    this.cb();
-  }
-}
-const fireResize = () =>
-  act(() => {
-    FakeRO.all.forEach((r) => r.fire());
-  });
 
 class FakeIO {
   static all = new Set<FakeIO>();
@@ -70,134 +34,121 @@ class FakeIO {
   }
 }
 
-const restore: Array<() => void> = [];
-function patch(proto: object, key: string, desc: PropertyDescriptor): void {
-  const prev = Object.getOwnPropertyDescriptor(proto, key);
-  Object.defineProperty(proto, key, { configurable: true, ...desc });
-  restore.push(() => {
-    if (prev) Object.defineProperty(proto, key, prev);
-    else delete (proto as Record<string, unknown>)[key];
-  });
-}
-
 beforeEach(() => {
-  geo.bank = { cw: 400, sw: 400 };
-  geo.recent = { cw: 200, sw: 200 };
-  geo.pinned = { cw: 120, sw: 120 };
-  FakeRO.all.clear();
   FakeIO.all.clear();
-  (globalThis as { ResizeObserver?: unknown }).ResizeObserver = FakeRO;
   (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver = FakeIO;
-  patch(HTMLElement.prototype, 'clientWidth', {
-    get(this: HTMLElement) {
-      const k = kindOf(this);
-      return k ? geo[k].cw : 0;
-    },
-  });
-  patch(HTMLElement.prototype, 'scrollWidth', {
-    get(this: HTMLElement) {
-      const k = kindOf(this);
-      return k ? geo[k].sw : 0;
-    },
-  });
 });
 
 afterEach(() => {
   cleanupUi();
-  restore.splice(0).reverse().forEach((r) => r());
-  delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
   delete (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver;
   vi.restoreAllMocks();
 });
 
 function mount(n: number, props: Partial<ChannelBankProps> = {}) {
-  return renderUi(
-    <ChannelBank
-      contacts={contactsOf(n)}
-      activeKey="masia"
-      onSelect={() => undefined}
-      peopleSlot={<button data-contacts-door="people">p</button>}
-      {...props}
-    />,
-  );
+  return renderUi(<ChannelBank contacts={contactsOf(n)} activeKey="masia" onSelect={() => undefined} {...props} />);
 }
-const recentVp = () => q('.chbank__recent')!;
-const plateCount = () => qa('.chbank__plate', recentVp()).length;
+const strip = () => q('.chbank__strip')!;
+const chips = () => qa('.chbank__plate', strip());
+const titles = () => chips().map((p) => p.title);
 
 describe('ChannelBank: structure', () => {
-  it('pinned and recent are scroller slots; the door stands OUTSIDE every scroller', () => {
+  it('is ONE scroller slot holding every chip — no sections, hairline, doors, picker chip or seat', () => {
     mount(5);
-    for (const sel of ['.chbank__scroll--pinned', '.chbank__scroll--recent']) {
-      expect(q(sel)!.classList.contains('hscroll'), sel).toBe(true);
+    expect(qa('.hscroll')).toHaveLength(1);
+    expect(strip().classList.contains('hscroll__viewport')).toBe(true);
+    expect(chips()).toHaveLength(7); // Masia, the family, five people — all in the one strip
+    for (const gone of ['.chbank__sep', '.chbank__doors', '.chbank__convs', '.chbank__seat', '.chbank__people', '.chbank__pinned', '.chbank__recent']) {
+      expect(q(gone), gone).toBeNull();
     }
-    expect(recentVp().classList.contains('hscroll__viewport')).toBe(true);
-    expect(recentVp().getAttribute('role')).toBe('group');
-    expect(recentVp().getAttribute('aria-label')).toBe('Recent');
-    expect(q('.chbank__scroll--pinned .hscroll__viewport')!.getAttribute('aria-label')).toBe('Pinned');
-    const doors = q('.chbank__doors')!;
-    expect(doors.closest('.hscroll')).toBeNull();
-    expect(qa('[data-contacts-door]', doors)).toHaveLength(1);
+  });
+
+  it('asks the scroller slot for the gutter arrows (never over a chip; hover only)', () => {
+    mount(3, { activeKey: 'u_1' });
+    expect(q('.chbank__scroll')!.getAttribute('data-arrows')).toBe('gutter');
   });
 
   it('is a toolbar named from the bundle and carries the theme tokens on its own root', () => {
     mount(2);
-    const bank = q('.chbank')!;
-    expect(bank.getAttribute('role')).toBe('toolbar');
-    expect(bank.getAttribute('aria-label')).toBe('Channels');
-    expect(bank.style.getPropertyValue('--msg-chip-size')).toBe('2.5rem');
+    expect(strip().getAttribute('role')).toBe('toolbar');
+    expect(strip().getAttribute('aria-label')).toBe('Channels');
+    expect(q('.chbank')!.style.getPropertyValue('--msg-chip-size')).toBe('2.5rem');
   });
 
   it('draws nothing for an empty contact list', () => {
     renderUi(<ChannelBank contacts={[]} onSelect={() => undefined} />);
     expect(q('.chbank')).toBeNull();
   });
+});
 
-  it('seats the live contact first, the assistant and the family pinned, everyone else recent', () => {
+describe('ChannelBank: the strip order (bankStrip)', () => {
+  it('seats the ACTIVE contact first and Masia SECOND, then the family, then everyone else', () => {
     mount(3, { activeKey: 'u_1' });
-    const order = qa('.chbank__plate').map((p) => p.dataset.kind);
-    expect(order[0]).toBe('CONTACT'); // seat 1 is the live one, whoever it is
-    expect(qa('.chbank__plate', q('.chbank__pinned')!).map((p) => p.dataset.kind)).toEqual(['MASIA', 'FAMILY']);
-    expect(qa('.chbank__plate', recentVp()).map((p) => p.title)).toEqual(['Person 0', 'Person 2']);
-    expect(q('.chbank__sep')).toBeTruthy();
+    expect(chips().map((p) => p.dataset.kind)).toEqual(['CONTACT', 'MASIA', 'FAMILY', 'CONTACT', 'CONTACT']);
+    expect(titles()).toEqual(['Person 1', 'Assistant', 'Family', 'Person 0', 'Person 2']);
+  });
+
+  it('seats Masia first when she is the active one, never repeated', () => {
+    mount(2);
+    expect(titles()).toEqual(['Assistant', 'Family', 'Person 0', 'Person 1']);
+  });
+
+  it('puts the pinned contacts after the family, before the recency tail, and the recency tail by recency', () => {
+    mount(4, { activeKey: 'masia', pinnedKeys: ['u_2'], recency: ['u_3', 'u_1'] });
+    expect(titles()).toEqual(['Assistant', 'Family', 'Person 2', 'Person 3', 'Person 1', 'Person 0']);
   });
 });
 
-describe('ChannelBank: plates', () => {
-  it('marks the live plate and selects a contact on click', () => {
+describe('ChannelBank: chips', () => {
+  it('marks the active chip, names it for a screen reader and on hover (no drawn name), and selects a contact on click', () => {
     const onSelect = vi.fn();
     mount(2, { onSelect });
     const live = q('.chbank__plate.is-live')!;
     expect(live.getAttribute('aria-current')).toBe('true');
+    // The name is the accessible name + the hover title — Ф2.8b-A draws it on NO chip, the live one included. jsdom has no layout, so
+    // «not drawn» is read off the markup: the name sits in the visually-hidden `.chbank__name` and is the ONLY text in the chip
+    // (`check-bank-strip.mjs` asserts the same on the real layout).
     expect(live.querySelector('.chbank__name')!.textContent).toBe('Assistant');
-    click(qa('.chbank__plate', recentVp())[1]!);
+    expect(live.title).toBe('Assistant');
+    expect(live.textContent).toBe('Assistant');
+    expect(qa('.chbank__plate.is-live')).toHaveLength(1);
+    click(chips()[3]!);
     expect(onSelect).toHaveBeenCalledWith(personContact(1));
+  });
+
+  it('keeps every chip named for a screen reader (the name element exists on every chip, the live one included)', () => {
+    mount(2);
+    expect(chips().map((p) => p.querySelector('.chbank__name')!.textContent)).toEqual([
+      'Assistant',
+      'Family',
+      'Person 0',
+      'Person 1',
+    ]);
   });
 
   it('locks a channel: it explains itself, shows the lock icon, and reports instead of selecting', () => {
     const onSelect = vi.fn();
     const onLockedSelect = vi.fn();
     mount(1, { onSelect, onLockedSelect, lockedKeys: ['u_0'] });
-    const plate = qa('.chbank__plate', recentVp())[0]!;
-    expect(plate.classList.contains('is-locked')).toBe(true);
-    expect(plate.title).toBe('Available in the full version');
-    const lock = plate.querySelector('svg')!;
+    const chip = chips().find((p) => p.classList.contains('is-locked'))!;
+    expect(chip.title).toBe('Available in the full version');
+    const lock = chip.querySelector('svg')!;
     expect(lock.getAttribute('data-icon')).toBe('close');
     expect(lock.getAttribute('data-size')).toBe('11');
     expect(lock.getAttribute('class')).toBe('chbank__lock');
-    click(plate);
+    click(chip);
     expect(onLockedSelect).toHaveBeenCalledWith(personContact(0));
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('draws the default chip: a group for the family, a human for a person', () => {
+  it('draws the default face: a group for the family, a human for a person', () => {
     mount(1);
-    const chips = qa('[data-chip]');
-    const byName = Object.fromEntries(chips.map((c) => [c.getAttribute('data-chip-name'), c.getAttribute('data-chip')]));
+    const byName = Object.fromEntries(qa('[data-chip]').map((c) => [c.getAttribute('data-chip-name'), c.getAttribute('data-chip')]));
     expect(byName[familyContact.name]).toBe('GROUP');
     expect(byName['Person 0']).toBe('HUMAN');
   });
 
-  it('lets the host put its own face and berth attributes on a plate, and keeps the default elsewhere', () => {
+  it('lets the host put its own face and berth attributes on a chip, and keeps the default elsewhere', () => {
     mount(1, {
       renderFace: (c) =>
         c.isAi ? { berth: { 'data-host-slot': 'intercom' }, node: <i data-host-face="" /> } : null,
@@ -208,30 +159,48 @@ describe('ChannelBank: plates', () => {
     expect(berth.getAttribute('aria-hidden')).toBe('true');
     expect(berth.querySelector('[data-host-face]')).toBeTruthy();
     expect(berth.querySelector('[data-chip]')).toBeNull();
-    expect(qa('[data-chip]').length).toBeGreaterThan(0); // the other plates kept the default
+    expect(qa('[data-chip]').length).toBeGreaterThan(0); // the other chips kept the default
   });
 
   it('keeps an empty berth in the DOM when the host face draws nothing yet', () => {
     mount(0, { renderFace: (c) => (c.isAi ? { berth: { 'data-host-slot': 'x' }, node: null } : null) });
     expect(q('[data-host-slot]')).toBeTruthy();
   });
+
+  it('needs no host to draw the assistant: the default face stands in', () => {
+    renderUi(<ChannelBank contacts={[assistantContact]} activeKey="masia" onSelect={() => undefined} />);
+    expect(chips()).toHaveLength(1);
+    expect(q('[data-chip]')!.getAttribute('data-chip')).toBe('HUMAN');
+  });
 });
 
 describe('ChannelBank: the lazy window', () => {
-  it('renders the first window, keeps the sentinel, and grows when the sentinel is seen, until none are left', () => {
-    mount(WINDOW + 8);
-    expect(plateCount()).toBe(WINDOW);
-    expect(recentVp().querySelector('.chbank__more')).not.toBeNull();
-    expect(q('.chbank__scroll--recent')!.getAttribute('data-end-more')).toBe('true');
+  it('renders the fixed head plus the first window of the tail, keeps the sentinel, and grows until none are left', () => {
+    mount(WINDOW + 8); // head = Masia + family (active is Masia) = 2; tail = 20
+    expect(chips()).toHaveLength(2 + WINDOW);
+    expect(strip().querySelector('.chbank__more')).not.toBeNull();
+    expect(q('.chbank__scroll')!.getAttribute('data-end-more')).toBe('true');
     act(() => {
       FakeIO.all.forEach((io) => io.hit());
     });
-    expect(plateCount()).toBe(WINDOW + 8);
-    expect(recentVp().querySelector('.chbank__more')).toBeNull();
-    expect(q('.chbank__scroll--recent')!.hasAttribute('data-end-more')).toBe(false);
+    expect(chips()).toHaveLength(2 + WINDOW + 8);
+    expect(strip().querySelector('.chbank__more')).toBeNull();
+    expect(q('.chbank__scroll')!.hasAttribute('data-end-more')).toBe(false);
   });
 
-  it('asks the host how far to grow, with the current size and the total', () => {
+  it('never cuts the fixed head: Masia, the family and the pins are there with a window of nothing', () => {
+    renderUi(<ChannelBank contacts={contactsOf(6)} activeKey="u_3" pinnedKeys={['u_5']} onSelect={() => undefined} />, {
+      env: {
+        bankWindow: { initial: 0, grow: (c, t) => Math.min(t, c + 2) },
+        phoneQuery: '(max-width: 1px)',
+        reactions: [],
+        notifyError: () => undefined,
+      },
+    });
+    expect(titles()).toEqual(['Person 3', 'Assistant', 'Family', 'Person 5']);
+  });
+
+  it('asks the host how far to grow, with the current size and the TAIL total', () => {
     const grow = vi.fn((current: number, total: number) => Math.min(total, current + 3));
     renderUi(<ChannelBank contacts={contactsOf(10)} activeKey="masia" onSelect={() => undefined} />, {
       env: {
@@ -241,100 +210,186 @@ describe('ChannelBank: the lazy window', () => {
         notifyError: () => undefined,
       },
     });
-    expect(plateCount()).toBe(4);
+    expect(chips()).toHaveLength(2 + 4);
     act(() => {
       FakeIO.all.forEach((io) => io.hit());
     });
-    expect(grow).toHaveBeenCalledWith(4, 10);
-    expect(plateCount()).toBe(7);
+    expect(grow).toHaveBeenCalledWith(4, 10); // 12 contacts − 2 fixed = 10 in the tail
+    expect(chips()).toHaveLength(2 + 7);
   });
 
   it('shows no sentinel when everything fits the window', () => {
     mount(3);
-    expect(recentVp().querySelector('.chbank__more')).toBeNull();
+    expect(strip().querySelector('.chbank__more')).toBeNull();
   });
 });
 
-describe('ChannelBank: the overflow latch', () => {
-  it('folds on genuine overflow and unfolds only with at least 180 px of slack', () => {
-    const on = vi.fn();
-    mount(5, { onOverflowChange: on });
-    expect(on.mock.calls).toEqual([[false]]); // the latch's first report
-    geo.bank = { cw: 400, sw: 410 }; // 410 > 400 + 4 → fold
-    fireResize();
-    expect(on.mock.calls).toEqual([[false], [true]]);
-    geo.bank = { cw: 400, sw: 300 }; // fits again, but 300 > 400 − 180 → STAY folded
-    fireResize();
-    expect(on.mock.calls).toEqual([[false], [true]]);
-    geo.bank = { cw: 400, sw: 210 }; // 210 ≤ 220 → real room → unfold
-    fireResize();
-    expect(on.mock.calls).toEqual([[false], [true], [false]]);
-  });
-});
+/**
+ * OTHER FAMILIES (polishing П16, founder 2026-11-08, variant Г). The model (`bankStrip` / `stripSegments`) decides who sits where
+ * and its own tests falsify that; what is proven HERE is what the bank draws from it: a delimiter — a thin tick and a tiny caps
+ * header, in a group named for a screen reader — before the FIRST chip of each other family, only when such a chip is shown,
+ * never before the active chip, never a control, and no badge on any chip.
+ */
+describe('ChannelBank: other families (П16)', () => {
+  const bobry = { id: 'f-bobry', name: 'Бобри' };
+  const lisy = { id: 'f-lisy', name: 'Лиси' };
+  const stranger = (i: number, otherFamily: { id: string | null; name: string | null }) => ({ ...personContact(i), otherFamily });
+  const groups = () => qa('.chbank__family', strip());
+  const delims = () => qa('.chbank__delim', strip());
+  const mine = [assistantContact, familyContact, personContact(0)];
 
-describe('ChannelBank: the conversation picker', () => {
-  const picker = (onPick = vi.fn()) => ({
-    title: 'Ada · conversations',
-    onPick,
-    items: [
-      { id: 'c1', label: 'Main', glyph: 'pin' as const, current: true },
-      { id: 'c2', label: 'Trip', glyph: 'chat' as const, current: false, spaceName: 'Travel', unread: 3 },
-    ],
+  it('draws no delimiter, no group and no extra wrapper when nobody is from another family', () => {
+    mount(3);
+    expect(delims()).toHaveLength(0);
+    expect(groups()).toHaveLength(0);
+    // The chips are the scroller's own children, exactly as before.
+    expect([...strip().children].every((el) => el.classList.contains('chbank__plate'))).toBe(true);
   });
 
-  it('shows the chip with the current glyph and the count, between seat 1 and the pinned strip', () => {
-    mount(1, { convPicker: picker() });
-    const chip = q('.chbank__convs')!;
-    expect(chip.getAttribute('aria-label')).toBe('Ada · conversations');
-    expect(chip.querySelector('.chbank__convs-count')!.textContent).toBe('2');
-    const icons = qa('svg', chip).map((s) => `${s.getAttribute('data-icon')}:${s.getAttribute('class')}`);
-    expect(icons).toEqual(['pin:chbank__ic chbank__convs-glyph', 'chevron:chbank__ic chbank__convs-caret']);
-    const bank = q('.chbank')!;
-    const children = [...bank.children];
-    expect(children.indexOf(chip)).toBe(1);
-    expect(children[0]!.classList.contains('chbank__plate')).toBe(true);
+  it('puts a delimiter before the first chip of another family — a group named for a screen reader, the header aria-hidden and not a control', () => {
+    mount(0, { contacts: [...mine, stranger(1, bobry), stranger(2, bobry)] });
+    expect(titles()).toEqual(['Assistant', 'Family', 'Person 0', 'Person 1', 'Person 2']);
+    expect(delims()).toHaveLength(1);
+    const group = groups()[0]!;
+    expect(group.getAttribute('role')).toBe('group');
+    expect(group.getAttribute('aria-label')).toBe('Other family · Бобри');
+    // The delimiter is the group's FIRST child, so nothing can part it from the chip it introduces…
+    const delim = group.firstElementChild!;
+    expect(delim.classList.contains('chbank__delim')).toBe(true);
+    expect(delim.getAttribute('aria-hidden')).toBe('true');
+    expect(q('.chbank__delim-kicker', delim)!.textContent).toBe('Other family');
+    expect(q('.chbank__delim-name', delim)!.textContent).toBe('Бобри');
+    // …and it is a picture, not a control: no button, nothing focusable.
+    expect(delim.tagName).not.toBe('BUTTON');
+    expect(qa('button, [tabindex]', delim)).toHaveLength(0);
+    // The group holds the strangers' chips, and ONLY theirs; the family's own stay bare in the scroller.
+    expect(qa('.chbank__plate', group).map((p) => p.title)).toEqual(['Person 1', 'Person 2']);
+    expect(chips().filter((p) => p.parentElement === strip()).map((p) => p.title)).toEqual(['Assistant', 'Family', 'Person 0']);
+    // No badge on the chips themselves (founder: a delimiter, not a badge).
+    expect(qa('.chbank__plate [data-family], .chbank__plate .chbank__family-badge', strip())).toHaveLength(0);
   });
 
-  it('opens the menu with the rows, marks the current one, and a pick reports its id once', () => {
-    const onPick = vi.fn();
-    mount(1, { convPicker: picker(onPick) });
-    expect(q('[data-cm=convs]')).toBeNull();
-    click(q('.chbank__convs'));
-    expect(q('.chbank__convs')!.getAttribute('aria-expanded')).toBe('true');
-    expect(q('[data-cm=convs]')).toBeTruthy();
-    expect(q('[data-cm-row="conv:c1"]')!.getAttribute('aria-current')).toBe('true');
-    expect(q('[data-cm-row="conv:c2"]')!.getAttribute('aria-current')).toBeNull();
-    expect(q('[data-cm-row="conv:c2"] .chbank-convs__unread')!.textContent).toBe('3');
-    click(q('[data-cm-row="conv:c2"]'));
-    expect(onPick).toHaveBeenCalledTimes(1);
-    expect(onPick).toHaveBeenCalledWith('c2');
-    expect(q('[data-cm=convs]')).toBeNull();
+  it('draws ONE delimiter per family, each before its own first chip', () => {
+    mount(0, { contacts: [...mine, stranger(1, bobry), stranger(2, lisy), stranger(3, bobry)] });
+    expect(groups().map((g) => g.getAttribute('aria-label'))).toEqual(['Other family · Бобри', 'Other family · Лиси']);
+    expect(groups().map((g) => qa('.chbank__plate', g).map((p) => p.title))).toEqual([['Person 1', 'Person 3'], ['Person 2']]);
   });
 
-  it('has no chip without a live contact or without conversations', () => {
-    mount(1, { convPicker: { ...picker(), items: [] } });
-    expect(q('.chbank__convs')).toBeNull();
+  it('never puts the delimiter before the ACTIVE chip: an active stranger sits first, bare, with its family behind the delimiter', () => {
+    mount(0, { contacts: [...mine, stranger(1, bobry), stranger(2, bobry)], activeKey: 'u_1' });
+    expect(titles()).toEqual(['Person 1', 'Assistant', 'Family', 'Person 0', 'Person 2']);
+    const first = strip().firstElementChild!;
+    expect(first.tagName).toBe('BUTTON');
+    expect(first.getAttribute('aria-current')).toBe('true');
+    // Its family's OTHER person is still behind a delimiter; the active chip is in no group.
+    expect(groups()).toHaveLength(1);
+    expect(qa('.chbank__plate', groups()[0]).map((p) => p.title)).toEqual(['Person 2']);
+    // …and if the active one was the only person of their family there is no delimiter for that family at all.
+    cleanupUi();
+    mount(0, { contacts: [...mine, stranger(1, bobry)], activeKey: 'u_1' });
+    expect(delims()).toHaveLength(0);
+    expect(titles()).toEqual(['Person 1', 'Assistant', 'Family', 'Person 0']);
   });
 
-  it('reports whether the host stylesheet folded the chip away', () => {
-    const onFold = vi.fn();
-    const realStyle = window.getComputedStyle.bind(window);
-    let folded = false;
-    vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) =>
-      el.classList.contains('chbank__convs') ? ({ display: folded ? 'none' : 'inline-flex' } as CSSStyleDeclaration) : realStyle(el),
+  it('a family the host could not name gets a delimiter with the kicker alone — never a guessed name', () => {
+    mount(0, { contacts: [...mine, stranger(1, { id: null, name: null })] });
+    const group = groups()[0]!;
+    expect(group.getAttribute('aria-label')).toBe('Other family');
+    expect(q('.chbank__delim-kicker', group)!.textContent).toBe('Other family');
+    expect(q('.chbank__delim-name', group)).toBeNull();
+  });
+
+  it('keeps a delimiter with its first chip under the lazy window: not drawn while the window ends before the group, drawn WITH its chip once it grows', () => {
+    const env = {
+      bankWindow: { initial: 2, grow: (c: number, t: number) => Math.min(t, c + 2) },
+      phoneQuery: '(max-width: 1px)',
+      reactions: [],
+      notifyError: () => undefined,
+    };
+    // head = Masia + family; tail = Person 0..3 (own) then one stranger → total 5.
+    renderUi(
+      <ChannelBank
+        contacts={[assistantContact, familyContact, ...[0, 1, 2, 3].map(personContact), stranger(9, bobry)]}
+        activeKey="masia"
+        onSelect={() => undefined}
+      />,
+      { env },
     );
-    mount(1, { convPicker: picker(), onConvsFoldChange: onFold });
-    expect(onFold.mock.calls).toEqual([[false]]);
-    folded = true;
-    fireResize();
-    expect(onFold.mock.calls).toEqual([[false], [true]]);
+    expect(titles()).toEqual(['Assistant', 'Family', 'Person 0', 'Person 1']);
+    expect(delims()).toHaveLength(0);
+    act(() => FakeIO.all.forEach((io) => io.hit()));
+    expect(titles()).toEqual(['Assistant', 'Family', 'Person 0', 'Person 1', 'Person 2', 'Person 3']);
+    expect(delims()).toHaveLength(0);
+    act(() => FakeIO.all.forEach((io) => io.hit()));
+    expect(titles().slice(-1)).toEqual(['Person 9']);
+    expect(delims()).toHaveLength(1);
+    expect(qa('.chbank__plate', groups()[0]).map((p) => p.title)).toEqual(['Person 9']);
+  });
+
+  it('a click on a stranger selects them like any chip; a click on the delimiter selects nothing', () => {
+    const onSelect = vi.fn();
+    mount(0, { contacts: [...mine, stranger(1, bobry)], onSelect });
+    click(delims()[0]!);
+    expect(onSelect).not.toHaveBeenCalled();
+    click(chips().find((p) => p.title === 'Person 1')!);
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ key: 'u_1' }));
   });
 });
 
-describe('ChannelBank: the assistant is just a contact to it', () => {
-  it('needs no host to draw its plate: the default chip stands in', () => {
-    renderUi(<ChannelBank contacts={[assistantContact]} activeKey="masia" onSelect={() => undefined} />);
-    expect(qa('.chbank__plate')).toHaveLength(1);
-    expect(q('[data-chip]')!.getAttribute('data-chip')).toBe('HUMAN');
+describe('ChannelBank: who waits (ADR-201, chat-attention К2)', () => {
+  const plateOf = (name: string) => chips().find((p) => p.title === name)!;
+  const withPerson = (extra: Partial<ReturnType<typeof personContact>>) => [assistantContact, familyContact, { ...personContact(0), ...extra }];
+
+  it('draws the unread count on the plate, says it in the accessible name, and nothing when there is none', () => {
+    renderUi(<ChannelBank contacts={withPerson({ unread: 3 })} activeKey="masia" onSelect={() => undefined} />);
+    const b = plateOf('Person 0').querySelector('.chbank__unread')!;
+    expect(b.textContent).toBe('3');
+    expect(b.getAttribute('aria-hidden')).toBe('true');
+    expect(b.classList.contains('chbank__unread--mention')).toBe(false);
+    expect(plateOf('Person 0').querySelector('.chbank__name')!.textContent).toBe('Person 0, 3 unread');
+    expect(plateOf('Person 0').classList.contains('has-unread')).toBe(true);
+    expect(plateOf('Family').querySelector('.chbank__unread')).toBeNull();
+  });
+
+  it('caps at 99+', () => {
+    renderUi(<ChannelBank contacts={withPerson({ unread: 148 })} activeKey="masia" onSelect={() => undefined} />);
+    expect(plateOf('Person 0').querySelector('.chbank__unread-n')!.textContent).toBe('99+');
+  });
+
+  it('accents a mention', () => {
+    renderUi(<ChannelBank contacts={withPerson({ unread: 5, unreadMentions: 2 })} activeKey="masia" onSelect={() => undefined} />);
+    const b = plateOf('Person 0').querySelector('.chbank__unread')!;
+    expect(b.classList.contains('chbank__unread--mention')).toBe(true);
+    expect(b.textContent).toBe('5');
+    expect(plateOf('Person 0').querySelector('.chbank__name')!.textContent).toBe('Person 0, 5 unread, 2 mentions of you');
+  });
+
+  it('a muted room with no mention shows only the 🔇 dot; with a mention, the mention count', () => {
+    renderUi(<ChannelBank contacts={withPerson({ unread: 12, muted: true })} activeKey="masia" onSelect={() => undefined} />);
+    let b = plateOf('Person 0').querySelector('.chbank__unread')!;
+    expect(b.classList.contains('chbank__unread--muted')).toBe(true);
+    expect(b.querySelector('.chbank__unread-n')).toBeNull();
+    expect(b.querySelector('[data-icon="muted"]')).toBeTruthy();
+    expect(plateOf('Person 0').querySelector('.chbank__name')!.textContent).toBe('Person 0, muted');
+    cleanupUi();
+    renderUi(<ChannelBank contacts={withPerson({ unread: 12, unreadMentions: 2, muted: true })} activeKey="masia" onSelect={() => undefined} />);
+    b = plateOf('Person 0').querySelector('.chbank__unread')!;
+    expect(b.querySelector('.chbank__unread-n')!.textContent).toBe('2');
+    expect(b.classList.contains('chbank__unread--mention')).toBe(true);
+  });
+
+  it('a muted room with nothing unread draws nothing', () => {
+    renderUi(<ChannelBank contacts={withPerson({ unread: 0, muted: true })} activeKey="masia" onSelect={() => undefined} />);
+    expect(plateOf('Person 0').querySelector('.chbank__unread')).toBeNull();
+  });
+
+  it('chipAttention is the one rule', () => {
+    const p = personContact(1);
+    expect(chipAttention(p)).toBeNull();
+    expect(chipAttention({ ...p, unread: 2 })).toEqual({ text: '2', mention: false, muted: false });
+    expect(chipAttention({ ...p, unread: 100, unreadMentions: 1 })).toEqual({ text: '99+', mention: true, muted: false });
+    expect(chipAttention({ ...p, unread: 12, muted: true })).toEqual({ text: null, mention: false, muted: true });
+    expect(chipAttention({ ...p, unread: 12, unreadMentions: 2, muted: true })).toEqual({ text: '2', mention: true, muted: true });
+    expect(chipAttention({ ...p, unread: 1, unreadMentions: 5 })).toEqual({ text: '1', mention: true, muted: false });
   });
 });

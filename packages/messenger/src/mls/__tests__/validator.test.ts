@@ -765,6 +765,67 @@ describe('assertMayAdd (internal ADR-117 §3)', () => {
   });
 });
 
+describe('assertMayAdd, the other direction (ADR-212 §6): a minor into a room with Masia', () => {
+  async function policy() {
+    const world = await TestWorld.create(createTsMlsEngine);
+    world.makeMinor('kid');
+    world.makeAdmin('mom', 'kid');
+    return world.policy;
+  }
+  const masia = identity('masia', 'm1', DeviceRole.ASSISTANT);
+  const before = [identity('bob', 'b1'), identity('mom', 'mom1'), masia];
+  const kid = identity('kid', 'k1');
+
+  it("refuses a child's device added by a non-admin, lets the child's admin add it", async () => {
+    const p = await policy();
+    await expectCode(
+      () => assertMayAdd(p, identity('bob', 'b1'), [kid], [...before, kid], before),
+      MlsEngineErrorCode.MINOR_ADD_FORBIDDEN,
+    );
+    assertMayAdd(p, identity('mom', 'mom1'), [kid], [...before, kid], before);
+  });
+
+  it('a GUARDIAN leaf needs an admin of its child, whoever the policy calls a minor', async () => {
+    const p = await policy();
+    const guardian = identity('lena', 'g1', DeviceRole.GUARDIAN);
+    await expectCode(
+      () => assertMayAdd(p, identity('bob', 'b1'), [guardian], [...before, guardian], before),
+      MlsEngineErrorCode.MINOR_ADD_FORBIDDEN,
+    );
+  });
+
+  it("a further device of a child already in the room, an adult's device, or a room without Masia: nothing to refuse", async () => {
+    const p = await policy();
+    const withKid = [...before, kid];
+    const kid2 = identity('kid', 'k2');
+    assertMayAdd(p, kid, [kid2], [...withKid, kid2], withKid);
+    const dave = identity('dave', 'd1');
+    assertMayAdd(p, identity('bob', 'b1'), [dave], [...before, dave], before);
+    const noMasia = before.filter((device) => device.role !== DeviceRole.ASSISTANT);
+    assertMayAdd(p, identity('bob', 'b1'), [kid], [...noMasia, kid], noMasia);
+  });
+});
+
+describe('ListLookup: «assistant» means the operator (ADR-212 §13)', () => {
+  const refusingDirectory: DeviceDirectory = {
+    deviceListOf: () => Promise.reject(new Error('must not be asked')),
+    listedSince: () => Promise.reject(new Error('must not be asked')),
+  };
+
+  it('refuses an ASSISTANT leaf of a non-operator before asking any list', async () => {
+    const lists = new ListLookup(refusingDirectory, {
+      conversationId: 'conv-1',
+      mode: 'live',
+      pins: new Map(),
+      operatorUserId: 'masia-operator',
+    });
+    await expectCode(
+      () => lists.require(identity('bob', 'b-masia', DeviceRole.ASSISTANT), new Uint8Array(32)),
+      MlsEngineErrorCode.ASSISTANT_NOT_OPERATOR,
+    );
+  });
+});
+
 // --- validateProposals: the size of a group ------------------------------------------------------------
 
 describe('validateProposals: a group has at most MAX_GROUP_LEAVES devices', () => {

@@ -11,12 +11,14 @@ import { createAuthHooks, type TokenExpectations } from './auth.js';
 import { registerCors } from './cors.js';
 import type { Database } from './db.js';
 import { createDeviceListDirectory, createDeviceLookupLimiter } from './domain/device-lists.js';
+import { createIdentityRequestDirectory } from './domain/identity-requests.js';
 import { createKeyPackageDirectory } from './domain/key-packages.js';
 import { createEpochSerializer } from './epoch-serializer.js';
 import { installErrorHandler } from './error-handler.js';
 import { registerConversationRoutes } from './routes/conversations.js';
 import { registerDeviceListRoutes } from './routes/device-lists.js';
 import { registerDeviceRoutes } from './routes/devices.js';
+import { registerIdentityRequestRoutes } from './routes/identity-requests.js';
 import { registerKeyPackageRoutes } from './routes/key-packages.js';
 import type { RouteDeps } from './routes/route-deps.js';
 import { BEARER_SECURITY_SCHEME } from './routes/schemas.js';
@@ -132,6 +134,7 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
 
   const deviceLookups = createDeviceLookupLimiter({ now: options.now });
   const operatorUserId = options.operatorUserId ?? null;
+  const now = options.now ?? Date.now;
   const deps: RouteDeps = {
     db: options.database,
     // Tokens are checked against the real clock: they are signed with it, and moving the test
@@ -139,9 +142,14 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
     auth: createAuthHooks({ keyring: options.tokenKeys, db: options.database, expect }),
     serializer: createEpochSerializer(options.database, { now: options.now }),
     keyPackages: createKeyPackageDirectory(options.database, { now: options.now, operatorUserId }),
-    deviceLists: createDeviceListDirectory(options.database, { limiter: deviceLookups, operatorUserId }),
+    deviceLists: createDeviceListDirectory(options.database, {
+      limiter: deviceLookups,
+      operatorUserId,
+    }),
     deviceLookups,
+    identityRequests: createIdentityRequestDirectory(options.database, { now }),
     operatorUserId,
+    now,
   };
 
   // On the root scope, before the routes: a preflight to any path is answered here (cors.ts).
@@ -172,6 +180,7 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
       );
       registerDeviceRoutes(scope, deps);
       registerDeviceListRoutes(scope, deps);
+      registerIdentityRequestRoutes(scope, deps);
       registerKeyPackageRoutes(scope, deps);
       registerConversationRoutes(scope, deps);
     },

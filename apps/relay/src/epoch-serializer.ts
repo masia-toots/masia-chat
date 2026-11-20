@@ -250,11 +250,10 @@ async function admitHandshake(tx: Queryable, input: CommitInput): Promise<Admiss
   assertEpoch(room, input.expectedEpoch);
   assertHandshakeHeader(input.bytes, room);
   if (input.welcome !== undefined) assertWelcomeHeader(input.welcome);
-  const committer = await findDevice(tx, input.senderDeviceId);
   await assertMemberDeltaAllowed(tx, {
     conversationId: input.conversationId,
     delta: input.memberDelta,
-    remover: { scope: input.admin, device: committer },
+    remover: { scope: input.admin },
   });
   await assertAddsClaimedBy(tx, {
     committerDeviceId: input.senderDeviceId,
@@ -340,7 +339,7 @@ export function createEpochSerializer(
         await assertMemberDeltaAllowed(tx, {
           conversationId: input.conversationId,
           delta,
-          remover: { scope: NO_ADMIN_SCOPE, device: null },
+          remover: { scope: NO_ADMIN_SCOPE },
         });
         await applyMemberDelta(tx, {
           conversationId: input.conversationId,

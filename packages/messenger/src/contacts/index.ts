@@ -3,23 +3,29 @@
  * hooks that own the circles, requests and groups, read and written through `ContactsDirectory`.
  */
 export {
-  bankSections,
+  bankStrip,
   buildContacts,
   contactRouteKey,
   contactUnread,
+  conversationsWithoutDoor,
   decodeContactKey,
   getEntityConversations,
+  contactKeyForConversation,
   pinnedContactKeys,
   recencySnapshot,
-  recentWindow,
-  seatContacts,
-  type BankSections,
+  stripSegments,
+  stripWindow,
+  type BankStrip,
+  type BankStripGroup,
+  type BankStripInput,
+  type ContactFamily,
   type ContactKind,
   type ContactLite,
   type FamilyMembership,
   type FamilyMemberLite,
   type GroupLite,
   type MessengerContact,
+  type StripSegment,
 } from './contact-model.js';
 export {
   CONTACT_SEARCH_DEBOUNCE_MS,

@@ -28,6 +28,8 @@ export const MESSENGER_ICON_NAMES = [
   'device-web',
   'device-desktop',
   'logout',
+  // ADR-201: a muted room's quiet mark on its chip (the volume-off driver).
+  'muted',
 ] as const;
 export type MessengerIconName = (typeof MESSENGER_ICON_NAMES)[number];
 

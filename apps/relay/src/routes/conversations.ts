@@ -254,9 +254,9 @@ export function registerConversationRoutes(app: FastifyInstance, deps: RouteDeps
           'epoch with content type commit, else 422 MLS_HEADER_MISMATCH naming the field; a ' +
           '`welcome` must parse as a Welcome. The relay reads only that cleartext header, never ' +
           'the content. `memberDelta` says who the commit adds and removes, and is stored and ' +
-          'returned by GET: removing a GUARDIAN device needs a FAMILY_ADMIN token whose `adminOf` ' +
-          'lists the child, or another GUARDIAN device of the same child driven by a token whose ' +
-          '`guardianOf` lists the child (403), adding a device that is revoked (422 ' +
+          'returned by GET: removing a GUARDIAN device needs a FAMILY_ADMIN token whose ' +
+          '`guardianOf` lists the child, from any device (`adminOf` alone is not enough: ' +
+          'administering is not guarding) (403), adding a device that is revoked (422 ' +
           "DEVICE_REVOKED) or not on its owner's signed list (422 DEVICE_NOT_IN_SIGNED_LIST) is " +
           'refused, and each added device must name the `keyPackageId` that THIS device claimed ' +
           'for it (422 KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER). A device a commit removed gets 403 ' +

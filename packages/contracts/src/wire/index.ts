@@ -4,9 +4,11 @@
 // conversation-id extension, the AAD frame, the handshake kinds, the cleartext MLS header parser,
 // the relay token's claims, the relay's HTTP vocabulary (refusal codes, device-list entries, page
 // caps, the key-package upload budget) and the signed device list's canonical encoding with its
-// signature check. Pure data, byte decoding and one WebCrypto verification; no dependency.
+// signature check, and the identity transfer's canonical bytes with its checks (ADR-218). Pure
+// data, byte decoding, SHA-256 and WebCrypto Ed25519 verification; no dependency.
 export * from './vocabulary.js';
 export * from './mls-header.js';
 export * from './relay-token.js';
 export * from './relay-api.js';
 export * from './device-list.js';
+export * from './identity-transfer.js';

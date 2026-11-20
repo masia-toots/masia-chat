@@ -1,9 +1,8 @@
 /**
  * The conversation picker of the live contact: the types it speaks and the ONE builder of its rows.
  *
- * The same rows have two homes: the picker chip's own menu in the bank, and the owner's header menu
- * (`⋯` → «where») when the bank folds the chip away because the row is too narrow. One builder, so
- * the two lists cannot drift.
+ * Since Ф2.4 (2026-11-03) the bank row has no picker chip — the rows live in ONE place, the owner's header
+ * menu (`⋯` → «Чати»), which is what the «📌 60 ▾» chip used to open. One builder, so the list is the list.
  */
 import type { CSSProperties } from 'react';
 import type { IconSet } from '@masia/contracts';
@@ -31,7 +30,7 @@ export interface ConvPickerItem {
 export interface ConvPickerProps {
   items: readonly ConvPickerItem[];
   onPick(id: string): void;
-  /** The dropdown's label and the chip's accessible name (e.g. «Anna · conversations»). */
+  /** The list's label (e.g. «Anna · conversations»). */
   title: string;
 }
 
@@ -47,14 +46,47 @@ export interface ConvPickerRowsEnv {
 }
 
 /**
+ * A chat's name as a menu row shows it: PLAIN text. A fork has no title of its own, so the host names it by the head of
+ * its last message — and Masia writes markdown («**Конфлікт у Ормузькій протоці**: …»). The marks are dropped wherever
+ * they sit, paired or not: the host cuts the head to a fixed length first, which can leave an opening `**` with no mate.
+ * (Local on purpose: this package depends on nothing but `@masia/contracts`, so the shared text helpers are out of reach.)
+ */
+export function plainConvLabel(raw: string): string {
+  return raw
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1') // [label](url) → label
+    .replace(/\*\*|__|~~|`/g, '') // bold · strike · code marks
+    .replace(/^\s{0,3}(?:#{1,6}|>|[-*+])\s+/gm, '') // a heading / quote / bullet mark opening a line
+    .replace(/(^|[\s(])[*_]+(?=\S)/g, '$1') // `*word` · `_word`: single emphasis hugging a word's start…
+    .replace(/(\S)[*_]+(?=$|[\s).,:;!?])/g, '$1') // …or its end (a `snake_case` inside a word stays)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** The longest a chat name the row carries: a fork named by an essay is cut to its head here, never mid-word. */
+export const CONV_LABEL_MAX = 80;
+
+/**
+ * A name's head: whole words up to `max` characters, then «…». The host used to `slice(0, 80)` the raw text — «Чим можу допомогт»,
+ * a word cut off clean with no mark that it was cut — and the two-line clamp below never fires on a text that already fits.
+ */
+export function clipAtWord(text: string, max: number = CONV_LABEL_MAX): string {
+  if (text.length <= max) return text;
+  const head = text.slice(0, max);
+  const lastSpace = head.lastIndexOf(' ');
+  // A single unbroken token longer than the cap has no word boundary to cut at: cut it where it stands.
+  return `${(lastSpace > max / 2 ? head.slice(0, lastSpace) : head).trimEnd()}…`;
+}
+
+/**
  * The picker's rows as menu rows. The current conversation carries `current` (→ `aria-current`, the
- * one place its name is asserted) and a tick.
+ * one place its name is asserted) and a tick. The name is plain text ({@link plainConvLabel}), cut to its head at a word
+ * ({@link clipAtWord}); the row clamps it to two lines with «…» (`MessengerPage.css`).
  */
 export function convPickerRows(picker: ConvPickerProps, env: ConvPickerRowsEnv): MenuRow[] {
   const { icons, themeStyle } = env;
   return picker.items.map((i) => ({
     id: `conv:${i.id}`,
-    label: i.label,
+    label: clipAtWord(plainConvLabel(i.label)) || i.label, // (a name that was ONLY marks keeps its marks rather than an empty row)
     icon: renderIcon(icons, i.glyph, 16),
     hint: i.spaceName ? (
       <span className="chbank-convs__space">

@@ -9,6 +9,7 @@
  * to accept these props (it may accept more).
  */
 import type { ComponentType, ReactNode, Ref, RefObject } from 'react';
+import type { BroadcastMention } from '../../protocol/messages.js';
 
 // ── Menu: the host's popover/sheet menu ──────────────────────────────────────
 
@@ -66,6 +67,10 @@ export interface HScrollSlotProps {
   viewportRef?: Ref<HTMLDivElement>;
   /** The host has MORE content than it renders (a lazy window): keep the end arrow on. */
   endMore?: boolean;
+  /** Changes whenever the active child changes — the scroller brings it into view. */
+  activeKey?: string | number | null;
+  /** The arrows live in a gutter BESIDE the strip (never over a child) and show only on hover/focus — fine pointers only. */
+  arrowsInGutter?: boolean;
   role?: string;
   'aria-label'?: string;
   prevLabel?: string;
@@ -103,6 +108,40 @@ export interface ComposerImage {
   mimeType: string;
 }
 
+/**
+ * Someone in the room, as the host knows them (internal ADR-199 §8): ONE list feeds the avatar and the
+ * colour of a sender's bubbles, the `@tag` chips and the composer's completion. The package derives
+ * nothing — not the colour (the host's palette and its default rule), not the handle (the host's grammar).
+ */
+export interface Participant {
+  /** The participant's id (`personId`; the assistant's sentinel for her). Used for «is me» and «who sent this». */
+  readonly id: string;
+  readonly name: string;
+  /** A displayable picture URL (already resolved by the host); absent: an initial on `color`. */
+  readonly avatarUrl?: string;
+  /** The CSS colour the host draws this person in (name, bubble edge, initial); absent: the theme's default. */
+  readonly color?: string;
+  /** The handle without `@`, lower-case — present only when this person can be mentioned (ADR-199 §5). */
+  readonly tag?: string;
+}
+
+/**
+ * Someone the composer may offer after `@` (ADR-199 §5): a participant WITH a handle. The package never
+ * parses the host's handle grammar: it matches the list it is given, so a chip or a row exists only for a
+ * real participant.
+ */
+export type MentionCandidate = Participant & {
+  readonly tag: string;
+  /**
+   * Set on the two rows that call the ROOM, not a person (ADR-201 Decision 4): `all` = everyone, `online` = everyone
+   * with the chat open now. `id` is then a sentinel, `name` the host-worded label. The popover draws a glyph instead
+   * of a face; the chip reads «is me» by this tag, not by the id.
+   */
+  readonly broadcast?: BroadcastMention;
+};
+
+export type { BroadcastMention };
+
 export interface ComposerSlotProps {
   onSend(text: string, images?: ComposerImage[]): void;
   /** The link is down: the input is locked. */
@@ -117,6 +156,15 @@ export interface ComposerSlotProps {
   enableVoice?: boolean;
   /** Seeds the draft (the text of the message being edited). */
   initialDraft?: string;
+  /**
+   * ArrowUp in an EMPTY draft (internal ADR-199 §3): «recall my last message to edit». The composer only
+   * reports the key; the host VIEW decides which message that is (own · text · not a sticker · not
+   * deleted) and re-seeds the composer through `initialDraft`. Not called while dictation or a
+   * translator is active, nor while the draft has text (then ArrowUp moves the caret as usual).
+   */
+  onRecallLast?(): void;
+  /** Who `@` may complete to; absent or empty hides the mention popover. */
+  mentionCandidates?: readonly MentionCandidate[];
 }
 
 /**

@@ -142,6 +142,9 @@ export function useRoomMessenger(
       sendSticker,
       sendTyping: noop,
       markRead: noop,
+      // No row here is ever marked "not sent": a message the room cannot post is reported once as a notice
+      // (`notifyError`), so there is no row to send again.
+      retrySend: noop,
       deleteMessage,
       editMessage,
       reactToMessage,

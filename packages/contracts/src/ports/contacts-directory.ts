@@ -32,6 +32,13 @@ export interface DirectoryContact {
   readonly avatarUrl: string | null;
   /** Belongs to the user's own closest group in the host (Masia: the primary family). */
   readonly isPrimaryMember: boolean;
+  /**
+   * The group this person is FROM, as the host says (Masia: a member of the user's primary family → that family; anyone else →
+   * their own primary family). The messenger names the delimiter behind which a contact of another group sits by it
+   * (polishing П16); `null` / `null` = unknown, which it draws as a nameless delimiter and never guesses a name for.
+   */
+  readonly familyId: string | null;
+  readonly familyName: string | null;
   /** Pinned to the user's channel bank; since when is `pinnedAt`. */
   readonly isPinned: boolean;
   readonly pinnedAt: string | null;

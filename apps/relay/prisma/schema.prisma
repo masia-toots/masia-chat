@@ -48,15 +48,129 @@ model Device {
   lastSeenAt      DateTime?  @map("last_seen_at") @db.Timestamptz(3)
   /// Set by POST /devices/:id/revoke, and only after the client has committed MLS Remove (§5a).
   revokedAt       DateTime?  @map("revoked_at") @db.Timestamptz(3)
+  /// ADR-218 §5: the identity key's Ed25519 signature over the device's holder statement
+  /// (`mls-identity-holder/v1`), posted by the device itself (`PUT /devices/me/holder-proof`) and
+  /// verified under the pinned key before it is stored. A signature, never a key. Null: none posted.
+  holderProof     Bytes?     @map("holder_proof")
 
-  keyPackages    KeyPackage[]
-  keyClaims      KeyPackageClaim[]
-  memberships    RoomMember[]
-  sentHandshakes MlsHandshake[]
-  sentEnvelopes  Envelope[]
+  keyPackages        KeyPackage[]
+  keyClaims          KeyPackageClaim[]
+  memberships        RoomMember[]
+  sentHandshakes     MlsHandshake[]
+  sentEnvelopes      Envelope[]
+  identityRequests   IdentityRequest[] @relation("IdentityRequestDevice")
+  challengedRequests IdentityRequest[] @relation("IdentityRequestChallenger")
+  resetTickets       IdentityReset[]   @relation("IdentityResetFirstDevice")
+  resetsRequested    IdentityReset[]   @relation("IdentityResetActorDevice")
 
   @@index([userId])
   @@map("devices")
+}
+
+/// Who released an account's identity key (ADR-218 §6).
+enum IdentityResetActor {
+  /// The operator CLI (`apps/relay/scripts/identity-reset.ts`), run on the relay's own machine.
+  OPERATOR
+  /// A family admin through `DELETE /users/:userId/identity-key` (every pinning device revoked first).
+  FAMILY_ADMIN
+
+  @@map("identity_reset_actor")
+}
+
+/// ADR-218 §6: one row per release of an account's pinned identity key, written in the transaction
+/// that releases it (`releaseIdentityKey`, apps/relay/src/domain/devices.ts). Permanent: it is the
+/// audit, and an OPERATOR row is also the TICKET. While a ticket is open (`pinnedAt` and `supersededAt`
+/// both null), only `firstDeviceId` may pin the account's next key; any other USER or ASSISTANT device
+/// gets 409 IDENTITY_RESET_PENDING. At most one open ticket per account: a partial UNIQUE INDEX in the
+/// migration `identity_resets` (`identity_resets_open_ticket_key`), which this schema language cannot
+/// express, so it is not declared below. CHECKs there: OPERATOR exactly when there is a first device; a
+/// ticket is closed one way only; a reason is at most 200 characters, and required when devices were
+/// revoked.
+model IdentityReset {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String             @map("user_id")
+  actor               IdentityResetActor
+  /// FAMILY_ADMIN: the admin's device. OPERATOR: null (the SSH key on the relay's machine is the login).
+  actorDeviceId       String?            @map("actor_device_id")
+  /// The operator's `--reason`: a short note (at most 200 characters), required when devices are
+  /// revoked past their rooms.
+  reason              String?
+  /// OPERATOR: the one device that may pin the next key. FAMILY_ADMIN: null (no ticket).
+  firstDeviceId       String?            @map("first_device_id")
+  /// Devices this reset revoked, past the STILL_IN_ROOMS rule.
+  revokedDeviceIds    String[]           @default([]) @map("revoked_device_ids")
+  /// SHA-256 of the released public key; null when nothing was pinned.
+  releasedKeySha256   Bytes?             @map("released_key_sha256")
+  listVersionsDeleted Int                @map("list_versions_deleted")
+  requestsDeleted     Int                @map("requests_deleted")
+  holderProofsCleared Int                @map("holder_proofs_cleared")
+  keyPackagesDeleted  Int                @map("key_packages_deleted")
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// When the first device pinned the new key: the ticket is closed.
+  pinnedAt            DateTime?          @map("pinned_at") @db.Timestamptz(3)
+  /// When a later reset replaced this still-open ticket.
+  supersededAt        DateTime?          @map("superseded_at") @db.Timestamptz(3)
+
+  /// Restrict, not the optional default SET NULL: devices are never deleted, and an audit row keeps
+  /// the devices it names.
+  firstDevice Device? @relation("IdentityResetFirstDevice", fields: [firstDeviceId], references: [id], onDelete: Restrict)
+  actorDevice Device? @relation("IdentityResetActorDevice", fields: [actorDeviceId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@map("identity_resets")
+}
+
+/// Why a device asks for the identity key (ADR-218 §1, §4). The value is part of the signed request.
+enum IdentityRequestPurpose {
+  pair
+  backfill
+
+  @@map("identity_request_purpose")
+}
+
+/// ADR-218 §1, §2, §4: a device asking for its person's identity key. The relay never opens anything:
+/// it stores the request N signed, the two pairing nonces, and the key a holder SEALED to N's one-time
+/// transfer key (HPKE ciphertext only), and serves the sealed key to N alone. The state is derived from
+/// the timestamps (`apps/relay/src/domain/identity-requests.ts`); times come from the relay's clock.
+/// CHECKs in the migration: a commitment exactly on `pair`, a list version >= 1, the sealed pair whole.
+model IdentityRequest {
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String                 @map("user_id")
+  /// N: the device asking.
+  deviceId           String                 @map("device_id")
+  purpose            IdentityRequestPurpose
+  /// `T_N`: N's one-time X25519 public key.
+  transferKey        Bytes                  @map("transfer_key")
+  /// `pair` only: SHA-256 commitment to N's nonce.
+  commitment         Bytes?
+  /// N's device-key signature over `mls-identity-request/v1`.
+  requestSignature   Bytes                  @map("request_signature")
+  /// The holder that challenged (`pair`).
+  challengerDeviceId String?                @map("challenger_device_id")
+  /// `r_B`, the challenger's nonce.
+  holderNonce        Bytes?                 @map("holder_nonce")
+  /// `r_N`, N's nonce, revealed after the challenge.
+  deviceNonce        Bytes?                 @map("device_nonce")
+  /// The list version the approval names (the HPKE aad's).
+  listVersion        Int?                   @map("list_version")
+  /// The sealed identity key: HPKE `enc` and ciphertext. Cleared on N's holder proof, by a reset, and
+  /// by retention `SEALED_IDENTITY_TTL_MS` after approval.
+  sealedEnc          Bytes?                 @map("sealed_enc")
+  sealedCt           Bytes?                 @map("sealed_ct")
+  createdAt          DateTime               @map("created_at") @db.Timestamptz(3)
+  /// Creation + `IDENTITY_REQUEST_TTL_MS`; moved to the cancel time when N cancels or replaces it.
+  expiresAt          DateTime               @map("expires_at") @db.Timestamptz(3)
+  challengedAt       DateTime?              @map("challenged_at") @db.Timestamptz(3)
+  revealedAt         DateTime?              @map("revealed_at") @db.Timestamptz(3)
+  approvedAt         DateTime?              @map("approved_at") @db.Timestamptz(3)
+  rejectedAt         DateTime?              @map("rejected_at") @db.Timestamptz(3)
+
+  device     Device  @relation("IdentityRequestDevice", fields: [deviceId], references: [id])
+  challenger Device? @relation("IdentityRequestChallenger", fields: [challengerDeviceId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([deviceId])
+  @@map("identity_requests")
 }
 
 /// ADR-117 §2a: the user's device list, SIGNED BY THE USER'S IDENTITY KEY ON THE CLIENT. The relay
@@ -92,8 +206,9 @@ model DeviceListVersion {
 
 /// ONE identity key per account (R2-A2, TODO-504 (c); R-G2, TODO-518): the key that signs its device
 /// list, pinned by the account's first USER or ASSISTANT device (the operator's key is the ASSISTANT
-/// one). Another key on a later USER or ASSISTANT device is 409 IDENTITY_KEY_CHANGED; only the explicit
-/// reset (`DELETE /users/:userId/identity-key`) releases it. GUARDIAN devices do not pin. Not a foreign
+/// one). Another key on a later USER or ASSISTANT device is 409 IDENTITY_KEY_CHANGED; only an explicit
+/// reset releases it: the family-admin route (`DELETE /users/:userId/identity-key`) or the operator CLI
+/// (ADR-218 §6, К5a; each writes an `IdentityReset` row). GUARDIAN devices do not pin. Not a foreign
 /// key: a pin outlives devices.
 model IdentityKey {
   userId         String   @id @map("user_id")

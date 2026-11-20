@@ -61,8 +61,42 @@ describe('the OpenAPI document', () => {
         'GET /conversations/{id}/envelopes',
         'POST /devices/{id}/revoke',
         'GET /health',
+        // ADR-218: the identity transfer.
+        'PUT /devices/me/holder-proof',
+        'POST /users/me/identity-requests',
+        'GET /users/me/identity-requests',
+        'GET /users/me/identity-requests/{id}',
+        'DELETE /users/me/identity-requests/{id}',
+        'POST /users/me/identity-requests/{id}/challenge',
+        'POST /users/me/identity-requests/{id}/reveal',
+        'POST /users/me/identity-requests/{id}/approve',
+        'POST /users/me/identity-requests/{id}/reject',
       ]),
     );
+  });
+
+  it('documents the caps and the conflicts of an identity request (ADR-218)', () => {
+    const create = document.paths['/users/me/identity-requests']?.post;
+    expect(Object.keys(create?.responses ?? {})).toEqual(
+      expect.arrayContaining(['201', '403', '409', '422', '429']),
+    );
+    const approve = document.paths['/users/me/identity-requests/{id}/approve']?.post;
+    expect(Object.keys(approve?.responses ?? {})).toEqual(
+      expect.arrayContaining(['200', '403', '404', '409', '422']),
+    );
+  });
+
+  it('serves the holder proof in the FULL device view only, never the PUBLIC one', () => {
+    // The serializer drops a field the response schema does not declare, so the schema is the rule.
+    const listing = document.paths['/users/{userId}/devices']?.get?.responses?.['200'] as
+      | { content?: Record<string, { schema?: unknown }> }
+      | undefined;
+    const schema = JSON.stringify(listing?.content?.['application/json']?.schema ?? {});
+    expect(schema).toContain('holderProof');
+    const proof = document.paths['/devices/me/holder-proof']?.put?.responses?.['200'] as
+      | { content?: Record<string, { schema?: { required?: string[] } }> }
+      | undefined;
+    expect(proof?.content?.['application/json']?.schema?.required).toContain('holderProof');
   });
 
   it('requires the bearer token on every route except /health', () => {

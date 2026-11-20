@@ -61,6 +61,23 @@ export interface ContactLite {
   /** `PinnedContact` — is this contact pinned to the bank, and since when (ordering of the pins). */
   isPinned?: boolean;
   pinnedAt?: string | null;
+  /**
+   * The family this person is FROM, as the host says (polishing П16): for a member of MY primary family that family,
+   * for anyone else THEIR OWN primary family; `null` when they have none. Read only to name the delimiter behind which
+   * a contact of another family sits (`MessengerContact.otherFamily`). Absent (an older host) = unknown.
+   */
+  familyId?: string | null;
+  familyName?: string | null;
+}
+
+/**
+ * The family a contact is from when it is NOT the family I am standing in (polishing П16, founder 2026-11-08). `id` is the
+ * grouping key — contacts with the same `id` sit behind ONE delimiter; `name` is what the delimiter says. Both `null` =
+ * a contact whose family is not known: they still sit behind a delimiter (a nameless one), never among the family's own people.
+ */
+export interface ContactFamily {
+  id: string | null;
+  name: string | null;
 }
 
 export interface MessengerContact {
@@ -80,6 +97,21 @@ export interface MessengerContact {
   isAi: boolean;
   /** An outsider of the family (guest К5 · contributor ADR-186) — the picker badges them by THIS status. Absent = a member. */
   outsiderStatus?: Exclude<FamilyMembership, 'MEMBER'>;
+  /**
+   * Set ONLY on a person who is not in the family I am standing in (`buildContacts`): a friend, or a relative of the
+   * primary family while I stand in another one. `bankStrip` seats them behind a delimiter per family; absent = the
+   * family's own (Masia · the family chat · its members · my groups).
+   */
+  otherFamily?: ContactFamily;
+  /**
+   * ADR-201 — what waits for me across this contact's rooms, as the HOST's unread store says (never derived here from
+   * messages). Absent = nothing to show. `unread` is the raw sum; `unreadMentions` the part that calls me by name
+   * (`<= unread`); `muted` = every room of the contact is muted for me (the chip then shows 🔇, and a number only for
+   * mentions — Г2 A). The bank draws them (`chipAttention`); it computes none of them.
+   */
+  unread?: number;
+  unreadMentions?: number;
+  muted?: boolean;
 }
 
 const MASIA_KEY = 'masia';
@@ -134,6 +166,83 @@ export function getEntityConversations(
   }
 }
 
+/**
+ * The INVERSE of {@link getEntityConversations}: the key of the contact a conversation belongs to, or null.
+ *
+ * A push tap (and every older `/messages/<id>` link) names a CONVERSATION, while the messenger route is
+ * `/messenger/:contactKey` (2026-11-07: a tap on a message push opened the messenger on its empty «pick a contact»
+ * placeholder — no contact matched the bare id). The page asks THIS, once the inbox
+ * is in, and lands on the right contact AND that very chat. Same matching rule as the forward direction — the contact
+ * whose conversations contain the id — so the two can never disagree; the first such contact in `contacts` order wins.
+ * A chat whose contact is not on my bank (a member who left, a contact not listed yet) still gets one: the keys the
+ * conversation itself suggests (Masia · the family · its group · each other seat by person, then by user) are tried
+ * through the same forward rule, so a derived key is always one the page itself resolves back to this chat.
+ */
+export function contactKeyForConversation(
+  contacts: readonly Pick<MessengerContact, 'key' | 'entityType' | 'id'>[],
+  conversations: MessengerConversationPreview[],
+  conversationId: string,
+  selfPersonId: string | undefined,
+  selfUserId?: string | undefined,
+): string | null {
+  if (!conversations.some((c) => c.id === conversationId)) return null;
+  const owns = (entityType: EntityType, id: string): boolean =>
+    getEntityConversations(entityType, id, conversations, selfPersonId, selfUserId).some((conv) => conv.id === conversationId);
+  const listed = contacts.find((c) => owns(c.entityType, c.id));
+  if (listed) return listed.key;
+  const conv = conversations.find((c) => c.id === conversationId)!;
+  const others = conv.participants.filter((p) => p.personId !== selfPersonId);
+  const suggested = [
+    MASIA_KEY,
+    FAMILY_KEY,
+    ...(conv.groupId ? [`g_${conv.groupId}`] : []),
+    ...others.map((p) => `m_${p.personId}`),
+    ...others.flatMap((p) => (p.userId && p.userId !== selfUserId ? [contactRouteKey(p.userId)] : [])),
+  ];
+  return (
+    suggested.find((key) => {
+      const dec = decodeContactKey(key);
+      return dec !== null && owns(dec.entityType, dec.id);
+    }) ?? null
+  );
+}
+
+/**
+ * THE ROOMS NO DOOR OPENS — the inbox rooms that nobody can reach from the channel bank.
+ *
+ * A room is reachable when some plate owns it under the ONE matching rule (`getEntityConversations`): the assistant's
+ * chats, the family chat, a member's DM, a LIVE group's chat, an accepted contact's DM. Everything else is a room the
+ * inbox still returns but no door leads to — a group that was deleted (its chat outlives the row), a contact who was
+ * unpinned or blocked (the contacts list drops them, so their DM loses its plate), a member who left. Nothing about such
+ * a room can wait for the person, so a count of «where am I waited for?» leaves it out.
+ *
+ * `doors` are the bank's plates; `acceptedContacts` are ALL of the person's accepted contacts, because a contact outside
+ * the active family's row (a relative of the primary family) is still opened from the circles — they are doors too.
+ * Pure over what the page already holds; a room the inbox has not returned yet is not in the answer (it is not known to
+ * be unreachable), so a brand-new DM counts from its first message.
+ */
+export function conversationsWithoutDoor(input: {
+  doors: readonly Pick<MessengerContact, 'entityType' | 'id'>[];
+  acceptedContacts: readonly Pick<ContactLite, 'userId'>[];
+  conversations: readonly MessengerConversationPreview[];
+  selfPersonId: string | undefined;
+  selfUserId?: string | undefined;
+}): ReadonlySet<string> {
+  const { doors, acceptedContacts, selfPersonId, selfUserId } = input;
+  const conversations = [...input.conversations];
+  const owners = [
+    ...doors,
+    ...acceptedContacts.map((c) => ({ entityType: 'CONTACT' as EntityType, id: c.userId })),
+  ];
+  const reachable = new Set<string>();
+  for (const owner of owners) {
+    for (const room of getEntityConversations(owner.entityType, owner.id, conversations, selfPersonId, selfUserId)) {
+      reachable.add(room.id);
+    }
+  }
+  return new Set(conversations.filter((c) => !reachable.has(c.id)).map((c) => c.id));
+}
+
 /** Total unread across a contact's conversations. */
 export function contactUnread(
   contact: MessengerContact,
@@ -156,7 +265,7 @@ export function contactUnread(
  *
  * `contacts` (ADR-115 К3) are the founder's «пікнуті контакти» — accepted
  * contacts, which since ADR-116 includes every member of my primary family who
- * has an account. `seatContacts` then reorders the whole row by recency, so this
+ * has an account. `bankStrip` then orders the whole row (active · Masia · pins · recency), so this
  * function only ever states the BASE order; it never seats anybody (§12.1).
  *
  * ## 🔴 ONE HUMAN, ONE PLATE — and `u_` wins (ADR-116 §3, 2026-09-06)
@@ -188,8 +297,14 @@ export function contactUnread(
  * `familyCircleUserIds` are the contacts I flagged into my virtual «Родина»
  * circle. They are not family, but I said they belong beside it, so they open
  * the tail of the people — ahead of my other contacts and behind every member.
- * This is a BASE order only: `seatContacts` still ranks the tail by recency and
+ * This is a BASE order only: `bankStrip` still ranks the tail by recency and
  * falls back to this order for anyone never talked to.
+ *
+ * ## …and they are behind a DELIMITER (polishing П16, founder 2026-11-08)
+ *
+ * Every contact that is not one of `members` (the family I am standing in) carries `otherFamily`
+ * ({@link ContactFamily}); `bankStrip` seats those after the family's own people, one delimiter per family. «Родина»-circle
+ * friends included — the flag orders them inside their group, it does not move them into mine.
  */
 export function buildContacts(
   members: FamilyMemberLite[],
@@ -198,6 +313,9 @@ export function buildContacts(
   selfPersonId: string | undefined,
   contacts: readonly ContactLite[] = [],
   familyCircleUserIds: ReadonlySet<string> = new Set(),
+  /** `membersKnown` — the member list has answered (it carries MY row). Before that a member of my primary family looks
+   *  exactly like a person of another family, so they are held back rather than flashed behind a delimiter. */
+  { membersKnown = true }: { membersKnown?: boolean } = {},
 ): MessengerContact[] {
   const agent = members.find((m) => m.type === 'AGENT');
   const masia: MessengerContact = {
@@ -264,18 +382,26 @@ export function buildContacts(
       };
     });
 
-  // The rest of my contacts, «friends of the family» first (ADR-116 rule 1).
+  // The rest of my contacts, «friends of the family» first (ADR-116 rule 1) — every one of them is a person of ANOTHER
+  // family than the one I am standing in, so each carries `otherFamily` and `bankStrip` seats them behind a delimiter per
+  // family (polishing П16, founder 2026-11-08).
   //
-  // `isPrimaryMember` who did NOT turn up in `members` is dropped, exactly as
-  // before: `GET /users/me/contacts` computes my PRIMARY family's people whatever
-  // family I am standing in, so keeping them would drop my relatives into another
-  // family's bank. Their one DM is still reachable from here — through the circles
-  // door, which lists every contact — this row just shows the family I am in.
-  const restContacts = contacts.filter((c) => !seatedUserIds.has(c.userId) && !c.isPrimaryMember);
+  // That includes `isPrimaryMember` who did NOT turn up in `members`: `GET /users/me/contacts` computes my PRIMARY
+  // family's people whatever family I am standing in. They used to be DROPPED here («keeping them would drop my relatives
+  // into another family's bank»); behind a delimiter named for that family they are no longer a leak into this one, and
+  // dropping them was what made the open chat's chip vanish from the strip when I switched family (the last-opened
+  // contact stays first ACROSS families, so it must resolve in every family's list). While the member list has not
+  // answered (`membersKnown: false`) nobody can be told from a family member, so they stay out — unknown is not foreign.
+  const restContacts = contacts.filter(
+    (c) => !seatedUserIds.has(c.userId) && (membersKnown || !c.isPrimaryMember),
+  );
   const crossFamilyContacts: MessengerContact[] = [
     ...restContacts.filter((c) => familyCircleUserIds.has(c.userId)),
     ...restContacts.filter((c) => !familyCircleUserIds.has(c.userId)),
-  ].map((c) => contactPlate(c));
+  ].map((c) => ({
+    ...contactPlate(c),
+    otherFamily: { id: c.familyId ?? null, name: c.familyName ?? null },
+  }));
 
   const groupContacts: MessengerContact[] = groups.map((g) => ({
     key: `g_${g.id}`,
@@ -291,119 +417,180 @@ export function buildContacts(
 }
 
 /**
- * SEATING — the host's chat canon §12.1 (private; summarised in docs/canon.md §6), the rule the one-row header is built on.
+ * THE BANK STRIP — the host's chat canon §12.1 (private; summarised in docs/canon.md §6), the ONE row the header is built on
+ * (founder 2026-11-03, plan chat-public-polish Ф2.4 — SUPERSEDES `seatContacts` + `bankSections`: the row is no longer sections
+ * with a hairline between them, it is ONE continuous strip, and the order is the whole contract):
  *
- *   Seat 1 = the LIVE contact (it sits immediately beside its name).
- *   Masia is PINNED to the highest non-live seat — so she is never lower than SECOND.
- *   Everyone else follows by RECENCY (`recency`, most-recent key first).
+ *   [the ACTIVE conversation's chip] · [Masia — always 2nd when she is not 1st] · [the family berth] · [pinned…] · [recent…]
+ *     · [per OTHER family: its people — pinned…, recent… — behind a delimiter «ІНША РОДИНА · <name>»]   (П16, 2026-11-08)
  *
- * Why not sort the whole row by recency: a row of unlabelled ~33 px faces is tapped from spatial
- * memory, and an order that changes on every selection never lets that memory form. Pinning Masia
- * keeps the most-used target spatially fixed while the tail still self-organises.
+ *   1. Seat 1 = the ACTIVE contact (it sits beside its own name). `undefined` in a lane room — nothing is active.
+ *   2. Masia is the highest non-active seat, so she is never lower than SECOND (and the stone machine parents into her berth,
+ *      so she must always be in the strip — never trimmed, never counted against the window).
+ *   3. The family chat is a pinned GROUP by nature (the groups panel lists only real `Group` rows, so a family chip the window
+ *      could trim would be reachable from nowhere), so it follows Masia without being asked.
+ *   4. The contacts I pinned (`PinnedContact`, ADR-115), in the order the caller gives (`pinnedKeys`, oldest pin first). A pin
+ *      that is not in the row (a contact since removed) is skipped.
+ *   5. Everyone else — people AND groups, ONE list — by RECENCY (`recency`, most-recent key first). A never-contacted channel
+ *      goes after the contacted ones and keeps `buildContacts`' own order (the index tiebreak: a stable sort alone is not a promise
+ *      to rely on across engines).
+ *   6. A key appears ONCE — the active chip is not repeated as a pin or a recent.
+ *   7. (П16, founder 2026-11-08) The CURRENT family comes first, the others after it. A contact carrying `otherFamily` (a friend,
+ *      or a relative of my primary family while I stand in another one) is seated in its family's GROUP at the end of the strip —
+ *      behind a delimiter, one group per family, the same inner order (pins · recency) — never among the current family's
+ *      people. The ACTIVE chip is the one exception: it is seat 1 even when it is foreign, so the last-opened contact stays
+ *      first ACROSS a family switch (the contact is addressed by the user pair, not by the family — ADR-116 rule 2) and the
+ *      current family's people follow it. A contact in several of my families is the current family's (`buildContacts` seats it
+ *      as a member, so it carries no `otherFamily`).
  *
- * 🔴 This function is PURE — it reorders nothing on its own. `recency` is a snapshot the caller
- * owns, and §12 requires that snapshot to move ONLY on the local user's own tap: remote activity
- * must never reshuffle the row under a finger, it applies on the next open.
+ * `groups` records where each other family's run starts so that the delimiter cannot be separated from its first chip by the
+ * window ({@link stripSegments} cuts the visible prefix into runs).
+ *
+ * Why not sort the whole row by recency: a row of small faces is tapped from spatial memory, and an order that changes on every
+ * selection never lets that memory form. The head of the strip is fixed by ROLE (active · Masia · family · pins); only the tail
+ * self-organises.
+ *
+ * 🔴 PURE — it reorders nothing on its own. `recency` is a snapshot the caller owns, and §12 requires that snapshot to move ONLY
+ * on the local user's own tap: remote activity must never reshuffle the row under a finger, it applies on the next open.
  */
-export function seatContacts(
-  contacts: readonly MessengerContact[],
-  liveKey: string | undefined,
-  recency: readonly string[] = [],
-): MessengerContact[] {
-  const rest = new Map(contacts.map((c) => [c.key, c]));
-  const seats: MessengerContact[] = [];
-
-  const live = liveKey ? rest.get(liveKey) : undefined;
-  if (live) {
-    seats.push(live);
-    rest.delete(live.key);
-  }
-
-  // The highest non-live seat is hers — seat 2 when someone else is live, and when SHE is live she
-  // already took seat 1 above, so the pin is satisfied either way.
-  const masia = [...rest.values()].find((c) => c.isAi);
-  if (masia) {
-    seats.push(masia);
-    rest.delete(masia.key);
-  }
-
-  // The tail, by recency. `Infinity` keeps a never-contacted channel after the contacted ones, and
-  // the index tiebreak keeps `buildContacts`' own order stable underneath (a stable sort alone is
-  // not enough of a promise to rely on across engines).
-  const tail = [...rest.values()].map((c, i) => {
-    const seen = recency.indexOf(c.key);
-    return { c, rank: seen < 0 ? Number.POSITIVE_INFINITY : seen, i };
-  });
-  tail.sort((a, b) => a.rank - b.rank || a.i - b.i);
-
-  return [...seats, ...tail.map((x) => x.c)];
+export interface BankStripInput {
+  contacts: readonly MessengerContact[];
+  /** The open channel's key — seat 1. `undefined` in a lane room. */
+  activeKey?: string | undefined;
+  /** Contact keys, most recent first (`recencySnapshot` + the local taps). */
+  recency?: readonly string[];
+  /** The contacts I pinned, oldest pin first (`pinnedContactKeys`). */
+  pinnedKeys?: readonly string[];
 }
 
 /**
- * BANK SECTIONS — the row, split into what it actually is (founder 2026-10-07, plan
- * icom-player-contacts К4 — SUPERSEDES the 2026-09-03 «≤ N people / ≤ M groups» two-section row):
- *
- *   [live][its conversations] │ [Masia 📌][Родина 📌][pinned 📌…] │ [recent people AND groups…]
- *
- *   1. PINNED = Masia (ALWAYS the first seat, never counted, never trimmed — the stone machine
- *      parents into her berth) · the family chat (a pinned GROUP; the groups door lists only real
- *      `Group` rows, so a family plate that could be trimmed would be reachable from nowhere) · then
- *      the contacts I pinned (`PinnedContact`, ADR-115), in the order the caller gives (`pinnedKeys`,
- *      oldest pin first). A pin that is not in the row (a contact since removed) is skipped.
- *   2. RECENT = EVERYONE ELSE, people and groups MERGED into ONE list by recency — the order of the
- *      seated input, not a second sort. It is returned WHOLE: the row renders a window of it
- *      (`BANK_RECENT_WINDOW`) and grows it as the scroller nears its end (`growBankWindow`) — the list is
- *      already in memory, so lazy is rendering, not fetching. `recentWindow` is the one place that
- *      takes the prefix.
- *   3. The LIVE channel is seat 1 whatever it is and appears in neither list — a live Masia is
- *      therefore not in `pinned` that render (the same non-duplication rule a live person has).
- *
- * 🔴 PURE, and it takes the row ALREADY SEATED (`seatContacts`): recency ordering is that
- * function's business and the snapshot is the caller's.
+ * ONE other family's run of chips — `chips[from..to)` — behind a delimiter «ІНША РОДИНА · <name>» (polishing П16, founder
+ * 2026-11-08). The delimiter is NOT a chip: it stands before `chips[from]`, so it can never be separated from the chip it
+ * introduces, and a window that ends before `from` simply never reaches it.
  */
-export interface BankSections {
-  /** Seat 1 — the open channel, person or group. `undefined` in a lane room (nothing is live). */
-  live: MessengerContact | undefined;
-  /** Masia first, then the family berth, then my pinned contacts. Never contains the live one. */
-  pinned: MessengerContact[];
-  /** Everyone else — people and groups, one list, most recent first. The WHOLE list; see
-   *  `recentWindow`. Never contains the live one or a pinned one. */
-  recent: MessengerContact[];
+export interface BankStripGroup {
+  family: ContactFamily;
+  /** Index in `BankStrip.chips` of the group's first chip (the delimiter stands right before it). */
+  from: number;
+  /** One past the group's last chip. */
+  to: number;
 }
 
-export function bankSections(
-  seated: readonly MessengerContact[],
-  liveKey: string | undefined,
-  pinnedKeys: readonly string[] = [],
-): BankSections {
-  const live = seated.find((c) => c.key === liveKey);
-  const tail = seated.filter((c) => c.key !== live?.key);
+export interface BankStrip {
+  /** The WHOLE strip, in order. */
+  chips: MessengerContact[];
+  /** How many leading chips are fixed by role (active · Masia · family · pins) — the window never cuts into them. */
+  fixed: number;
+  /** The other families' runs, in order, each a slice of the TAIL of `chips` (after the current family's own people). */
+  groups: BankStripGroup[];
+}
 
-  const byKey = new Map(tail.map((c) => [c.key, c]));
-  const pinned: MessengerContact[] = [];
+export function bankStrip(input: BankStripInput): BankStrip {
+  const { contacts, activeKey, recency = [], pinnedKeys = [] } = input;
+  const rest = new Map<string, MessengerContact>();
+  for (const c of contacts) if (!rest.has(c.key)) rest.set(c.key, c);
+
+  const head: MessengerContact[] = [];
   const take = (c: MessengerContact | undefined): void => {
-    if (c && byKey.delete(c.key)) pinned.push(c);
+    if (c && rest.delete(c.key)) head.push(c);
   };
-  take(tail.find((c) => c.isAi));
-  take(tail.find((c) => c.kind === 'FAMILY'));
-  for (const k of pinnedKeys) take(byKey.get(k));
+  // The ACTIVE chip is seat 1 whichever family it is from: the last-opened contact stays first across a family switch
+  // (founder 2026-11-08), so it is taken BEFORE any family is looked at and belongs to no group.
+  take(activeKey ? rest.get(activeKey) : undefined);
+  // The highest non-active seat is hers — seat 2 when someone else is active; when SHE is active she took seat 1 above.
+  take([...rest.values()].find((c) => c.isAi));
+  take([...rest.values()].find((c) => c.kind === 'FAMILY'));
+  // A pin of a person of ANOTHER family is not fixed by role: it leads its own family's group instead (below), so the
+  // current family's people always come right after the head.
+  for (const k of pinnedKeys) {
+    const c = rest.get(k);
+    if (c && !c.otherFamily) take(c);
+  }
 
-  // What is left keeps the seated (recency) order — `tail` is that order, `byKey` only says who remains.
-  const recent = tail.filter((c) => byKey.has(c.key));
-  return { live, pinned, recent };
+  const recencyRank = (key: string): number => {
+    const seen = recency.indexOf(key);
+    return seen < 0 ? Number.POSITIVE_INFINITY : seen;
+  };
+  const left = [...rest.values()].map((c, i) => ({ c, i }));
+
+  // The current family's own tail — people AND groups, ONE list, by recency.
+  const own = left
+    .filter(({ c }) => !c.otherFamily)
+    .map((x) => ({ ...x, rank: recencyRank(x.c.key) }))
+    .sort((a, b) => a.rank - b.rank || a.i - b.i);
+
+  // The other families' people: inside a family the SAME inner order as the current one (pins first — oldest pin first —
+  // then recency, then the base order), and the families themselves in the order their first contact comes up.
+  const pinRank = (key: string): number => {
+    const at = pinnedKeys.indexOf(key);
+    return at < 0 ? Number.POSITIVE_INFINITY : at;
+  };
+  const foreign = left
+    .filter(({ c }) => c.otherFamily)
+    .map((x) => ({ ...x, pin: pinRank(x.c.key), rank: recencyRank(x.c.key) }))
+    .sort((a, b) => a.pin - b.pin || a.rank - b.rank || a.i - b.i);
+  const byFamily = new Map<string | null, { family: ContactFamily; chips: MessengerContact[] }>();
+  for (const { c } of foreign) {
+    const family = c.otherFamily as ContactFamily;
+    const run = byFamily.get(family.id) ?? { family, chips: [] };
+    run.chips.push(c);
+    byFamily.set(family.id, run);
+  }
+
+  const chips = [...head, ...own.map((x) => x.c)];
+  const groups: BankStripGroup[] = [];
+  for (const run of byFamily.values()) {
+    groups.push({ family: run.family, from: chips.length, to: chips.length + run.chips.length });
+    chips.push(...run.chips);
+  }
+  return { chips, fixed: head.length, groups };
 }
 
 /**
- * The visible prefix of the recent list — the ONE place the window is applied.
+ * The visible prefix of the strip — the ONE place the window is applied. The fixed head is always whole; `recentLimit` caps only the
+ * recency tail behind it (the current family's own people first, then the other families' runs).
  *
- * `limit` is required: how many plates fit is a UI decision the host owns (in Masia, the
- * `BANK_RECENT_WINDOW` constant of `@masia/shared`), so this package neither guesses nor copies it.
+ * `recentLimit` is required: how many chips fit is a UI decision the host owns (in Masia, the `BANK_RECENT_WINDOW` constant of
+ * `@masia/shared`), so this package neither guesses nor copies it.
  */
-export function recentWindow(
-  recent: readonly MessengerContact[],
-  limit: number,
-): MessengerContact[] {
-  return recent.slice(0, Math.max(0, limit));
+export function stripWindow(strip: BankStrip, recentLimit: number): MessengerContact[] {
+  return strip.chips.slice(0, strip.fixed + Math.max(0, recentLimit));
+}
+
+/**
+ * One run of the VISIBLE strip: `family === null` is the current family's own run (the head + its people — no delimiter),
+ * otherwise the other family's chips that sit behind a delimiter naming it.
+ */
+export interface StripSegment {
+  family: ContactFamily | null;
+  chips: MessengerContact[];
+}
+
+/**
+ * The visible strip (`stripWindow`'s `shown` chips) cut into its runs — what the renderer draws, so it decides nothing about
+ * who sits where. The rules, each one a test:
+ *   · the delimiter belongs to the FIRST chip of its group: a group whose first chip the window did not reach is not drawn,
+ *     and a group the window cuts in the middle keeps its delimiter and the chips that fit;
+ *   · nothing is delimited when nothing of the current family precedes it (a group that opens the strip — no active chip, no
+ *     Masia — is drawn as a plain run: «other» needs a «this» before it, and the delimiter is never the strip's first thing).
+ */
+export function stripSegments(strip: BankStrip, shown: number): StripSegment[] {
+  const count = Math.max(0, Math.min(shown, strip.chips.length));
+  const segments: StripSegment[] = [];
+  const plain = (from: number, to: number): void => {
+    if (to > from) segments.push({ family: null, chips: strip.chips.slice(from, to) });
+  };
+  let at = 0;
+  for (const g of strip.groups) {
+    if (g.from >= count) break;
+    plain(at, g.from);
+    const to = Math.min(g.to, count);
+    if (g.from === 0) plain(0, to);
+    else segments.push({ family: g.family, chips: strip.chips.slice(g.from, to) });
+    at = to;
+  }
+  plain(at, count);
+  return segments;
 }
 
 /**

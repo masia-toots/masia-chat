@@ -35,6 +35,9 @@ export function createPeopleDirectory(initial: readonly PersonView[] = []): Peop
     username: null,
     displayName: person.displayName,
     avatarUrl: null,
+    // The playground has no families: the group a person is from is unknown, and the messenger never guesses it.
+    familyId: null,
+    familyName: null,
     // The "primary" flag is what lets the pin star be switched off again; it is the only meaning here.
     isPrimaryMember: true,
     isPinned: pinned.has(person.userId),

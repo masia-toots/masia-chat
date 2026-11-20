@@ -40,6 +40,41 @@ docker compose up --build
 Then open <http://localhost:8080> in two tabs, join with two names, and write. What is encrypted, what the
 relay sees, and which shortcuts the playground takes are in [`demo/README.md`](demo/README.md).
 
+![The playground: two browser tabs, two people, one end-to-end encrypted chat through a relay on the same machine](demo/playground.png)
+
+## Where it stands
+
+Pre-1.0. Every package is at 0.0.1, and the interfaces will change. The page that tracks this against the code,
+with test counts and dates, is [`packages/messenger/docs/context.md`](packages/messenger/docs/context.md).
+
+**Works today**
+
+- The playground: an end-to-end encrypted chat (MLS, RFC 9420) between two tabs, through a relay on your machine.
+- The relay keeps ciphertext, public keys and routing metadata. Its schema has no column for message text, and
+  it drops envelopes and handshakes after 30 days.
+- The client: replies, edits, @-mentions, and a "not sent" line with Retry and Delete that survives a reload.
+  The unread count is the number the server keeps, not one the client adds up.
+- Devices: signed device lists, a 16-digit approval code, moving the identity key between one person's devices,
+  and an operator reset for a lost key, in the contracts, the client crypto and the relay.
+- The assistant is a room member everyone can see. It joins only as an `ASSISTANT` device on the operator's
+  list, and the add rule is checked both when a commit is sent and when it is received.
+- The MLS engine passes interop scenarios against OpenMLS (`pnpm test:interop`, needs Docker), with one pinned
+  patch to `ts-mls`. Every port has an in-memory fake and a contract suite.
+
+**Not there yet**
+
+- The room runtime (sessions, enrolment, commits, one writer per room) is not in the package. `createMessenger`
+  holds the ports and nothing more, so the playground carries its own runtime.
+- There is no screen or flow here for adding a device or moving the identity key, and no run on a real phone yet.
+- The relay is a mailbox over HTTP: clients poll, and there is no push channel. Deployment, TLS and backups are
+  yours to decide. The relay checks tokens; minting them is the host's job.
+- Pictures and files do not go through the encrypted path yet.
+- Calls are not in this repository. The first host has one-to-one audio calls, built outside it; moving them
+  in is separate work, not started.
+- `ts-mls` is young and has one maintainer, and neither it nor this code has had an outside security audit.
+  The open design questions (who signs a minor's device list, how people verify each other, what a message is
+  bound to, how much to trust a web device) are listed in `context.md`.
+
 ## Develop
 
 ```sh

@@ -1,24 +1,25 @@
 /**
- * bankSections — К4 (founder 2026-10-07, plan icom-player-contacts): the row is
- * `[live] │ [Masia 📌][Родина 📌][pinned 📌…] │ [recent people AND groups, windowed + lazy]`.
- * These are the assertions the render harness cannot make cheaply: that Masia is first pinned
- * whatever recency did, that the pins keep `PinnedContact` order, that people and groups merge into
- * ONE recency list, and that the window takes the limit the host gives it.
+ * bankStrip — Ф2.4 of plan chat-public-polish (founder 2026-11-03, SUPERSEDES the К4 sections row): the bank is ONE strip,
+ * `[active] · [Masia — 2nd when she is not 1st] · [family berth] · [pinned…] · [recent…]`. These are the assertions the render
+ * harness cannot make cheaply: the ORDER (active first, Masia second-or-first, then pins in PinnedContact order, then recency),
+ * that every key appears once, and that the window cuts only the recency tail and never the fixed head.
  * (The host's default window and its lazy growth are asserted in the host, beside the constants.)
  */
 import { describe, it, expect } from 'vitest';
 import type { MessengerConversationPreview } from '../../protocol/conversations.js';
 import {
-  bankSections,
+  bankStrip,
   buildContacts,
+  contactKeyForConversation,
   contactRouteKey,
   contactUnread,
+  conversationsWithoutDoor,
   decodeContactKey,
   getEntityConversations,
   pinnedContactKeys,
   recencySnapshot,
-  recentWindow,
-  seatContacts,
+  stripSegments,
+  stripWindow,
   type ContactLite,
   type FamilyMemberLite,
   type MessengerContact,
@@ -66,61 +67,230 @@ const groups7 = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7'].map(group);
 const row = [masia, family, ...people8, ...groups7];
 const names = (cs: readonly MessengerContact[]): string[] => cs.map((c) => c.name);
 
-describe('bankSections (К4)', () => {
-  it('seats Masia FIRST among the pinned, then the family berth', () => {
-    // Recency put a group ahead of everything — Masia and Родина still lead the pinned seats.
-    const seated = seatContacts(row, undefined, ['g_g7', 'm_p3']);
-    const s = bankSections(seated, undefined);
-    expect(names(s.pinned)).toEqual(['Мася', 'Родина']);
-    expect(s.pinned[0]?.isAi).toBe(true);
+describe('bankStrip (Ф2.4)', () => {
+  const strip = (activeKey: string | undefined, recency: string[] = [], pinnedKeys: string[] = []) =>
+    bankStrip({ contacts: row, activeKey, recency, pinnedKeys });
+
+  it('puts the ACTIVE chip first, Masia SECOND, then the family berth', () => {
+    // Recency put a group ahead of everything — the head is still fixed by role.
+    const s = strip('m_p3', ['g_g7', 'm_p3']);
+    expect(names(s.chips).slice(0, 3)).toEqual(['p3', 'Мася', 'Родина']);
+    expect(s.chips[1]?.isAi).toBe(true);
   });
 
-  it('keeps the pinned contacts in the order PinnedContact gives, after the berths', () => {
-    const s = bankSections(seatContacts(row, undefined), undefined, ['m_p5', 'g_g2', 'm_p1']);
-    expect(names(s.pinned)).toEqual(['Мася', 'Родина', 'p5', 'g2', 'p1']);
+  it('puts Masia FIRST when she is the active one (never repeated, never lower than second)', () => {
+    const s = strip('masia', ['g_g7']);
+    expect(names(s.chips).slice(0, 2)).toEqual(['Мася', 'Родина']);
+    expect(s.chips.filter((c) => c.isAi)).toHaveLength(1);
+  });
+
+  it('keeps Masia first with nobody active (a lane room)', () => {
+    const s = strip(undefined, ['g_g7']);
+    expect(s.chips[0]?.key).toBe('masia');
+    expect(s.fixed).toBe(2); // Masia + the family berth
+  });
+
+  it('keeps the pinned contacts in the order PinnedContact gives, after the berths and before recency', () => {
+    const s = strip('g_g1', ['m_p8', 'm_p7'], ['m_p5', 'g_g2', 'm_p1']);
+    expect(names(s.chips).slice(0, 7)).toEqual(['g1', 'Мася', 'Родина', 'p5', 'g2', 'p1', 'p8']);
+    expect(s.fixed).toBe(6);
     // …and a pin that is not in the row (a removed contact) is skipped, never rendered blank.
-    const gone = bankSections(seatContacts(row, undefined), undefined, ['u_ghost', 'm_p2']);
-    expect(names(gone.pinned)).toEqual(['Мася', 'Родина', 'p2']);
+    const gone = strip(undefined, [], ['u_ghost', 'm_p2']);
+    expect(names(gone.chips).slice(0, 3)).toEqual(['Мася', 'Родина', 'p2']);
+    expect(gone.fixed).toBe(3);
   });
 
-  it('merges people AND groups into ONE recent list in recency order, excluding the pinned', () => {
-    const seated = seatContacts(row, undefined, ['g_g7', 'm_p8', 'g_g6', 'm_p7']);
-    const s = bankSections(seated, undefined, ['m_p1']);
-    expect(names(s.recent).slice(0, 4)).toEqual(['g7', 'p8', 'g6', 'p7']);
-    // Everyone not pinned and not live, exactly once: 8 people + 7 groups − 1 pinned (p1).
-    expect(s.recent).toHaveLength(14);
-    expect(names(s.recent)).not.toContain('p1');
-    expect(s.recent.some((c) => c.kind === 'GROUP')).toBe(true);
-    expect(s.recent.some((c) => c.kind === 'MEMBER')).toBe(true);
-    expect(s.recent.every((c) => !c.isAi && c.kind !== 'FAMILY')).toBe(true);
+  it('merges people AND groups into ONE recency tail, most recent first', () => {
+    const s = strip(undefined, ['g_g7', 'm_p8', 'g_g6', 'm_p7']);
+    const tail = s.chips.slice(s.fixed);
+    expect(names(tail).slice(0, 4)).toEqual(['g7', 'p8', 'g6', 'p7']);
+    expect(tail.some((c) => c.kind === 'GROUP')).toBe(true);
+    expect(tail.some((c) => c.kind === 'MEMBER')).toBe(true);
+    // The never-contacted keep the row's own order behind the contacted ones.
+    expect(names(tail).slice(4, 7)).toEqual(['p1', 'p2', 'p3']);
   });
 
-  it('never repeats the live channel in either list', () => {
-    for (const liveKey of ['g_g3', 'm_p2', 'family', 'masia']) {
-      const s = bankSections(seatContacts(row, liveKey), liveKey, ['m_p2', 'g_g3']);
-      expect(s.live?.key).toBe(liveKey);
-      expect([...s.pinned, ...s.recent].some((c) => c.key === liveKey)).toBe(false);
+  it('shows every key exactly once, whoever is active or pinned', () => {
+    for (const activeKey of ['g_g3', 'm_p2', 'family', 'masia', undefined]) {
+      const s = strip(activeKey, ['g_g7', 'm_p8'], ['m_p2', 'g_g3', 'masia', 'family', 'm_p2']);
+      const keys = s.chips.map((c) => c.key);
+      expect(new Set(keys).size).toBe(keys.length);
+      expect(keys).toHaveLength(row.length);
+      if (activeKey) expect(keys[0]).toBe(activeKey);
     }
-    // A live Masia leaves the pinned seats to the family berth + pins (she is seat 1).
-    const m = bankSections(seatContacts(row, 'masia'), 'masia');
-    expect(names(m.pinned)).toEqual(['Родина']);
   });
 
-  it('is undefined-live safe (a lane room seats nobody) and empty-safe', () => {
-    const s = bankSections(seatContacts(row, undefined), undefined);
-    expect(s.live).toBeUndefined();
-    expect(s.pinned[0]?.key).toBe('masia');
-    expect(bankSections([], undefined)).toEqual({ live: undefined, pinned: [], recent: [] });
+  it('dedupes a contact list that carries a key twice', () => {
+    const s = bankStrip({ contacts: [masia, person('p1'), person('p1')], activeKey: undefined });
+    expect(names(s.chips)).toEqual(['Мася', 'p1']);
   });
 
-  it('applies ONE window limit to the recent list (people and groups share it)', () => {
-    const s = bankSections(seatContacts(row, undefined), undefined);
-    expect(recentWindow(s.recent, 5)).toHaveLength(5);
-    expect(names(recentWindow(s.recent, 3))).toEqual(names(s.recent).slice(0, 3));
-    expect(recentWindow(s.recent, 0)).toEqual([]);
-    expect(recentWindow(s.recent, -4)).toEqual([]);
-    // A short list is simply shown whole.
-    expect(recentWindow(s.recent, 100)).toHaveLength(s.recent.length);
+  it('is empty-safe and unknown-active safe', () => {
+    expect(bankStrip({ contacts: [] })).toEqual({ chips: [], fixed: 0, groups: [] });
+    // An active key that is not in the row seats nobody first (Masia leads).
+    expect(strip('m_ghost').chips[0]?.key).toBe('masia');
+  });
+
+  it('applies ONE window limit to the recency tail and never cuts the fixed head', () => {
+    const s = strip('m_p3', [], ['m_p5']);
+    expect(s.fixed).toBe(4); // active · Masia · family · pin
+    expect(stripWindow(s, 5)).toHaveLength(4 + 5);
+    expect(names(stripWindow(s, 3))).toEqual(names(s.chips).slice(0, 4 + 3));
+    expect(stripWindow(s, 0)).toHaveLength(4);
+    expect(stripWindow(s, -4)).toHaveLength(4);
+    // A short tail is simply shown whole.
+    expect(stripWindow(s, 100)).toHaveLength(s.chips.length);
+  });
+});
+
+/**
+ * bankStrip — OTHER FAMILIES (polishing П16, founder 2026-11-08, variant Г): the current family's people first, then each other
+ * family behind a delimiter; the last-opened contact stays first even when it is one of them; the window never parts a
+ * delimiter from its first chip. The strip is ONE function and these are its claims.
+ */
+describe('bankStrip — other families (П16)', () => {
+  const bobr = { id: 'f-bobry', name: 'Бобри' } as const;
+  const lisy = { id: 'f-lisy', name: 'Лиси' } as const;
+  /** A friend of another family, as `buildContacts` plates them (`u_<userId>` + `otherFamily`). */
+  const friend = (n: string, otherFamily: { id: string | null; name: string | null }): MessengerContact => ({
+    key: `u_${n}`,
+    kind: 'CONTACT',
+    entityType: 'CONTACT',
+    id: n,
+    name: n,
+    avatarUrl: null,
+    isAi: false,
+    otherFamily,
+  });
+  const own = [masia, family, person('p1'), person('p2'), person('p3'), group('g1')];
+  const b1 = friend('b1', bobr);
+  const b2 = friend('b2', bobr);
+  const b3 = friend('b3', bobr);
+  const l1 = friend('l1', lisy);
+  const n1 = friend('n1', { id: null, name: null });
+  /** The row as `buildContacts` returns it: the family's own, then the strangers (the endpoint's order). */
+  const row2 = [...own, b1, l1, b2, b3, n1];
+  const strip = (opts: { activeKey?: string; recency?: string[]; pinnedKeys?: string[]; contacts?: MessengerContact[] } = {}) =>
+    bankStrip({ contacts: opts.contacts ?? row2, activeKey: opts.activeKey, recency: opts.recency ?? [], pinnedKeys: opts.pinnedKeys ?? [] });
+  const runs = (s: ReturnType<typeof bankStrip>, shown = s.chips.length) =>
+    stripSegments(s, shown).map((seg) => ({ family: seg.family?.name ?? null, chips: names(seg.chips) }));
+
+  it('puts the current family first and each OTHER family behind it, one group per family', () => {
+    const s = strip();
+    expect(names(s.chips)).toEqual(['Мася', 'Родина', 'p1', 'p2', 'p3', 'g1', 'b1', 'b2', 'b3', 'l1', 'n1']);
+    expect(s.fixed).toBe(2);
+    expect(s.groups.map((g) => [g.family.id, g.from, g.to])).toEqual([
+      ['f-bobry', 6, 9],
+      ['f-lisy', 9, 10],
+      [null, 10, 11],
+    ]);
+    // A group is exactly the contiguous slice of chips it names, and none of them is the current family's.
+    for (const g of s.groups) {
+      expect(s.chips.slice(g.from, g.to).every((c) => c.otherFamily?.id === g.family.id)).toBe(true);
+    }
+    expect(s.chips.slice(0, 6).some((c) => c.otherFamily)).toBe(false);
+  });
+
+  it('a contact with no known family is grouped with the other nameless ones, never into a family it may not belong to', () => {
+    const s = strip({ contacts: [...own, n1, friend('n2', { id: null, name: null })] });
+    expect(s.groups).toHaveLength(1);
+    expect(s.groups[0]).toMatchObject({ family: { id: null, name: null }, from: 6, to: 8 });
+  });
+
+  it('orders a family INSIDE its group like the current one — pins first (oldest pin first), then recency, then the base order', () => {
+    const s = strip({ recency: ['u_b3', 'u_b2'], pinnedKeys: ['u_b2'] });
+    // b2 is pinned (leads); b3 is the more recently talked-to of the rest; b1 never was.
+    expect(names(s.chips.slice(6, 9))).toEqual(['b2', 'b3', 'b1']);
+    // The family whose contact leads the foreign order comes first: recency alone puts Лиси ahead of Бобри here.
+    const lisyFirst = strip({ recency: ['u_l1'] });
+    expect(lisyFirst.groups.map((g) => g.family.name)).toEqual(['Лиси', 'Бобри', null]);
+  });
+
+  it("a PINNED stranger leads its own family's group, not the fixed head — the current family's people come right after the head", () => {
+    const s = strip({ pinnedKeys: ['u_l1', 'm_p3'] });
+    expect(names(s.chips.slice(0, 4))).toEqual(['Мася', 'Родина', 'p3', 'p1']);
+    expect(s.fixed).toBe(3); // Masia · family · the family's own pin
+    expect(s.groups[0]?.family.name).toBe('Лиси'); // a pin lifts its family to the front of the others
+  });
+
+  it('keeps the LAST-OPENED contact first when it is from another family — across a family switch — and the current family follows', () => {
+    const s = strip({ activeKey: 'u_b2' });
+    expect(names(s.chips).slice(0, 5)).toEqual(['b2', 'Мася', 'Родина', 'p1', 'p2']);
+    expect(s.fixed).toBe(3);
+    // It sits in the head, so it is in no group; its family's other people are still behind a delimiter, further on.
+    expect(s.chips.indexOf(b2)).toBe(0);
+    expect(s.groups.flatMap((g) => s.chips.slice(g.from, g.to)).includes(b2)).toBe(false);
+    expect(runs(s)[0]).toEqual({ family: null, chips: ['b2', 'Мася', 'Родина', 'p1', 'p2', 'p3', 'g1'] });
+    expect(runs(s)[1]).toEqual({ family: 'Бобри', chips: ['b1', 'b3'] });
+  });
+
+  it('draws no empty group: an active stranger who is the ONLY one of their family leaves that family without a delimiter', () => {
+    const s = strip({ activeKey: 'u_l1' });
+    expect(s.groups.map((g) => g.family.name)).toEqual(['Бобри', null]);
+    expect(runs(s).some((r) => r.family === 'Лиси')).toBe(false);
+  });
+
+  it('shows every key exactly once, whoever is active or pinned', () => {
+    for (const activeKey of ['u_b1', 'u_n1', 'g_g1', 'masia', undefined]) {
+      const s = strip({ activeKey, recency: ['u_l1', 'm_p2'], pinnedKeys: ['u_b3', 'm_p1', 'u_b3'] });
+      const keys = s.chips.map((c) => c.key);
+      expect(new Set(keys).size).toBe(keys.length);
+      expect(keys).toHaveLength(row2.length);
+      if (activeKey) expect(keys[0]).toBe(activeKey);
+    }
+  });
+
+  it('draws nothing extra when nobody is from another family', () => {
+    const s = strip({ contacts: row });
+    expect(s.groups).toEqual([]);
+    expect(stripSegments(s, s.chips.length)).toEqual([{ family: null, chips: s.chips }]);
+  });
+
+  describe('the window (stripWindow + stripSegments)', () => {
+    it('caps the tail as before — the current family first, so strangers are the first to wait behind the limit', () => {
+      const s = strip({ activeKey: 'm_p1' });
+      expect(names(stripWindow(s, 2))).toEqual(names(s.chips).slice(0, s.fixed + 2));
+      expect(names(stripWindow(s, 2)).some((n) => n.startsWith('b') || n.startsWith('l'))).toBe(false);
+    });
+
+    it('never parts a delimiter from its first chip: a window ending before the group never draws it', () => {
+      const s = strip();
+      const first = s.groups[0]!.from; // 6
+      for (let shown = 0; shown <= first; shown++) {
+        expect(stripSegments(s, shown).every((seg) => seg.family === null)).toBe(true);
+      }
+      // One chip into the group and the delimiter is there, with exactly that chip.
+      const into = runs(s, first + 1);
+      expect(into[into.length - 1]).toEqual({ family: 'Бобри', chips: ['b1'] });
+    });
+
+    it('a window that ends INSIDE a group keeps the delimiter and the chips that fit; the next group is not reached', () => {
+      const s = strip();
+      expect(runs(s, 8)).toEqual([
+        { family: null, chips: ['Мася', 'Родина', 'p1', 'p2', 'p3', 'g1'] },
+        { family: 'Бобри', chips: ['b1', 'b2'] },
+      ]);
+    });
+
+    it('a group is cut exactly at the window — never an empty group, and the runs always add up to the shown chips', () => {
+      const s = strip({ activeKey: 'u_b1', recency: ['u_l1'] });
+      for (let shown = 0; shown <= s.chips.length + 2; shown++) {
+        const segs = stripSegments(s, shown);
+        expect(segs.every((seg) => seg.chips.length > 0)).toBe(true);
+        expect(segs.flatMap((seg) => seg.chips)).toEqual(s.chips.slice(0, shown));
+        // The delimiter is never the strip's first thing: the first run is always the current family's.
+        if (segs.length) expect(segs[0]?.family).toBeNull();
+      }
+    });
+
+    it("a delimiter is not the strip's first thing: a strip that OPENS with strangers (no active chip, no Masia) is drawn bare", () => {
+      const s = bankStrip({ contacts: [b1, b2, l1] });
+      expect(s.groups.map((g) => g.from)).toEqual([0, 2]);
+      expect(runs(s)).toEqual([
+        { family: null, chips: ['b1', 'b2'] },
+        { family: 'Лиси', chips: ['l1'] },
+      ]);
+    });
   });
 });
 
@@ -166,6 +336,14 @@ describe('buildContacts (ADR-116)', () => {
     username: null,
     isPrimaryMember,
   });
+  /** A contact with the family the host says they are from (П16). */
+  const conF = (
+    userId: string,
+    displayName: string,
+    isPrimaryMember: boolean,
+    familyId: string | null,
+    familyName: string | null,
+  ): ContactLite => ({ ...con(userId, displayName, isPrimaryMember), familyId, familyName });
   const keys = (cs: readonly MessengerContact[]): string[] => cs.map((c) => c.key);
 
   it('seats a human who is BOTH a member and a contact ONCE, keyed by `u_` (ADR-116 §3)', () => {
@@ -221,9 +399,11 @@ describe('buildContacts (ADR-116)', () => {
       [con('u1', 'Данило', true), con('uL', 'Ірина')],
       new Set(['uL']),
     );
-    const s = bankSections(seatContacts(built, undefined), undefined);
-    expect(names(s.pinned)).toEqual(['Masia', 'Родина']);
-    expect(names(s.recent)).toEqual(['Данило', 'Ірина', 'Похід']);
+    const s = bankStrip({ contacts: built });
+    expect(names(s.chips.slice(0, s.fixed))).toEqual(['Masia', 'Родина']);
+    // П16: Ірина (a «Родина» friend, no primary family of her own on the row) is not the current family's — she
+    // sits behind the family's own tail (the group «Похід») under a delimiter; the fixed head is unchanged.
+    expect(names(s.chips.slice(s.fixed))).toEqual(['Данило', 'Похід', 'Ірина']);
   });
 
   it('is unchanged for a family with no accounts and no flags', () => {
@@ -231,16 +411,61 @@ describe('buildContacts (ADR-116)', () => {
     expect(keys(built)).toEqual(['masia', 'family', 'm_p1', 'm_p2']);
   });
 
-  it("keeps my PRIMARY family out of another family's row", () => {
-    // Standing in a family that is not my primary one: `GET /users/me/contacts` still computes my
-    // primary family's people, and they must not leak into this family's bank. Only the person who
-    // is actually seated here (and my ordinary contacts) show up.
+  it("seats my PRIMARY family behind a delimiter in another family's row — as a foreign group, never among its people (П16)", () => {
+    // Standing in a family that is not my primary one: `GET /users/me/contacts` still computes my primary family's people.
+    // They USED to be dropped here; now they are kept — as another family's people (`otherFamily`, named by the host) — so
+    // the contact I last opened (a relative) does not vanish from the strip when I switch family. Only the person who is
+    // actually seated here is the family's own.
     const built = buildContacts([mem('p9', 'Ірина', 'uL')], [], labels, 'p0', [
-      con('uMum', 'Мама', true),
+      conF('uMum', 'Мама', true, 'f-home', 'Масіні'),
       con('uL', 'Ірина'),
-      con('uZ', 'Зоя'),
+      conF('uZ', 'Зоя', false, 'f-zoya', 'Зої'),
     ]);
-    expect(keys(built)).toEqual(['masia', 'family', 'u_uL', 'u_uZ']);
+    expect(keys(built)).toEqual(['masia', 'family', 'u_uL', 'u_uMum', 'u_uZ']);
+    expect(built.find((c) => c.key === 'u_uL')?.otherFamily).toBeUndefined();
+    expect(built.find((c) => c.key === 'u_uMum')?.otherFamily).toEqual({ id: 'f-home', name: 'Масіні' });
+    expect(built.find((c) => c.key === 'u_uZ')?.otherFamily).toEqual({ id: 'f-zoya', name: 'Зої' });
+    // …and the strip puts them behind one delimiter each, after the family's own person.
+    const s = bankStrip({ contacts: built });
+    expect(names(s.chips)).toEqual(['Masia', 'Родина', 'Ірина', 'Мама', 'Зоя']);
+    expect(s.groups.map((g) => g.family.name)).toEqual(['Масіні', 'Зої']);
+  });
+
+  it('a contact I know through several families belongs to the CURRENT family when they are in it (no otherFamily)', () => {
+    // Zoya is my friend (her own primary family is «Зої») AND a member of the family I stand in: one plate, the family's.
+    const built = buildContacts([mem('p1', 'Зоя', 'uZ')], [], labels, 'p0', [conF('uZ', 'Zoya', false, 'f-zoya', 'Зої')]);
+    expect(keys(built)).toEqual(['masia', 'family', 'u_uZ']);
+    expect(built.find((c) => c.key === 'u_uZ')?.otherFamily).toBeUndefined();
+    expect(bankStrip({ contacts: built }).groups).toEqual([]);
+  });
+
+  it('keeps a «Родина»-circle friend a stranger: the flag orders them inside their group, it does not move them into mine', () => {
+    const built = buildContacts(
+      [mem('p1', 'Данило')],
+      [],
+      labels,
+      'p0',
+      [conF('uA', 'Аня', false, 'f-a', 'Ані'), conF('uL', 'Ірина', false, 'f-l', 'Лісові')],
+      new Set(['uL']),
+    );
+    expect(keys(built)).toEqual(['masia', 'family', 'm_p1', 'u_uL', 'u_uA']);
+    expect(built.find((c) => c.key === 'u_uL')?.otherFamily).toEqual({ id: 'f-l', name: 'Лісові' });
+    expect(names(bankStrip({ contacts: built }).chips)).toEqual(['Masia', 'Родина', 'Данило', 'Ірина', 'Аня']);
+  });
+
+  it('a contact whose family the host did not say is a stranger with a NAMELESS family — never a guessed name', () => {
+    const built = buildContacts([mem('p1', 'Данило')], [], labels, 'p0', [con('uX', 'Х')]);
+    expect(built.find((c) => c.key === 'u_uX')?.otherFamily).toEqual({ id: null, name: null });
+  });
+
+  it('holds back my primary family until the member list has answered — unknown is not foreign', () => {
+    // Before `members` carries MY row (a first load, or the beat after a family switch) a relative of my primary family looks
+    // exactly like a person of another family; flashing them behind «ІНША РОДИНА» for that beat would be a lie.
+    const contacts = [conF('uMum', 'Мама', true, 'f-home', 'Масіні'), conF('uZ', 'Зоя', false, 'f-zoya', 'Зої')];
+    const early = buildContacts([], [], labels, 'p0', contacts, new Set(), { membersKnown: false });
+    expect(keys(early)).toEqual(['masia', 'family', 'u_uZ']);
+    const answered = buildContacts([mem('p0', 'Я')], [], labels, 'p0', contacts, new Set(), { membersKnown: true });
+    expect(keys(answered)).toEqual(['masia', 'family', 'u_uMum', 'u_uZ']); // (I am not my own plate)
   });
 });
 
@@ -266,6 +491,8 @@ describe('conversations of a contact', () => {
     group: null,
     lastMessage: null,
     unreadCount: 0,
+    unreadMentions: 0,
+    mutedUntil: null,
     participantCount: 2,
     participants: [],
     createdAt: '2026-01-01T00:00:00Z',
@@ -335,6 +562,42 @@ describe('conversations of a contact', () => {
     expect(ids(getEntityConversations('FAMILY_GROUP', 'family', inbox, 'me'))).toEqual(['fam']);
   });
 
+  // 2026-11-07: a tap on a message push opened the empty «pick a contact» placeholder — the push names a CONVERSATION
+  // (`/messages/<id>` → `/messenger/<id>`), the route wants a contact. The page asks the inverse below.
+  it('🔴 a push’s conversation id leads back to its contact — the inverse of the same rule', () => {
+    const masiaPlate: MessengerContact = { key: 'masia', kind: 'MASIA', entityType: 'MASIA', id: 'masia', name: 'Мася', avatarUrl: null, isAi: true };
+    const familyPlate: MessengerContact = { key: 'family', kind: 'FAMILY', entityType: 'FAMILY_GROUP', id: 'family', name: 'Родина', avatarUrl: null, isAi: false };
+    const plates = [masiaPlate, familyPlate, person('p1'), contactPlate('uX'), group('g1')];
+    const owner = (id: string) => contactKeyForConversation(plates, inbox, id, 'me', 'uMe');
+    expect(owner('dm-person')).toBe('m_p1');
+    expect(owner('dm-user')).toBe(contactRouteKey('uX'));
+    expect(owner('grp')).toBe(group('g1').key);
+    expect(owner('fam')).toBe('family');
+    expect(owner('ai-old')).toBe('masia');
+    // Every id the forward rule hands out comes back to the plate it came from.
+    for (const plate of plates) {
+      for (const c of getEntityConversations(plate.entityType, plate.id, inbox, 'me', 'uMe')) {
+        expect(owner(c.id), c.id).toBe(plate.key);
+      }
+    }
+  });
+
+  it('a chat whose contact is not on my bank still finds one — derived, and checked by the same forward rule', () => {
+    expect(contactKeyForConversation([person('p1')], inbox, 'grp', 'me')).toBe('g_g1');
+    expect(contactKeyForConversation([], inbox, 'dm-person', 'me')).toBe('m_p1');
+    expect(contactKeyForConversation([], inbox, 'ai-old', 'me')).toBe('masia');
+    expect(contactKeyForConversation([], inbox, 'fam', 'me')).toBe('family');
+    // A cross-family seat: its person key matches by person, which the forward rule accepts for this very chat.
+    const derived = contactKeyForConversation([], inbox, 'dm-user', 'me', 'uMe')!;
+    const dec = decodeContactKey(derived)!;
+    expect(ids(getEntityConversations(dec.entityType, dec.id, inbox, 'me', 'uMe'))).toContain('dm-user');
+  });
+
+  it('an id that is not in my inbox (another family, deleted) gives null', () => {
+    expect(contactKeyForConversation([person('p1')], inbox, 'not-mine', 'me')).toBeNull();
+    expect(contactKeyForConversation([], [], 'dm-person', 'me')).toBeNull();
+  });
+
   it('sums the unread of a contact across its chats', () => {
     expect(contactUnread(person('p1'), inbox, 'me')).toBe(3);
     expect(contactUnread(group('g1'), inbox, 'me')).toBe(1);
@@ -362,5 +625,100 @@ describe('conversations of a contact', () => {
       id: 'uX',
     });
     expect(decodeContactKey('lane_mind')).toBeNull();
+  });
+});
+
+/**
+ * conversationsWithoutDoor — the rooms the inbox returns but no door of the bank opens. The pad's count leaves them out
+ * (polishing П17): a deleted group's chat, a DM with a contact who was unpinned or blocked (the contacts list drops them, so
+ * the DM loses its plate), a DM with a member who left. The matching rule is the ONE `getEntityConversations`; this only
+ * asks which known rooms nothing owns.
+ */
+describe('conversationsWithoutDoor (П17)', () => {
+  const room = (id: string, over: Partial<MessengerConversationPreview> = {}): MessengerConversationPreview => ({
+    id,
+    title: null,
+    titleCustom: false,
+    type: 'DIRECT',
+    isPrivate: false,
+    autoTranslate: false,
+    masiaMode: 'ACTIVE',
+    avatarUrl: null,
+    groupId: null,
+    group: null,
+    lastMessage: null,
+    unreadCount: 0,
+    unreadMentions: 0,
+    mutedUntil: null,
+    participantCount: 2,
+    participants: [],
+    createdAt: '2026-01-01T00:00:00Z',
+    ...over,
+  });
+  const dmWith = (id: string, userId: string, personId: string) =>
+    room(id, {
+      participants: [
+        { personId: 'me', name: 'Я', userId: 'uMe' },
+        { personId, name: personId, userId },
+      ],
+    });
+  const contactPlate = (userId: string): MessengerContact => ({
+    key: contactRouteKey(userId),
+    kind: 'CONTACT',
+    entityType: 'CONTACT',
+    id: userId,
+    name: userId,
+    avatarUrl: null,
+    isAi: false,
+  });
+
+  const inbox = [
+    room('ai-primary', { type: 'AI_CHAT', isPrimary: true }),
+    room('ai-old', { type: 'AI_CHAT' }),
+    room('fam', { type: 'FAMILY' }),
+    room('dm-member', { participants: [{ personId: 'me', name: 'Я' }, { personId: 'p1', name: 'Данило' }] }),
+    dmWith('dm-friend', 'uFriend', 'pf'),
+    dmWith('dm-blocked', 'uBlocked', 'pb'),
+    dmWith('dm-unpinned', 'uOld', 'po'),
+    dmWith('dm-relative', 'uRel', 'pr'),
+    room('grp-live', { type: 'GROUP', groupId: 'g-live' }),
+    room('grp-deleted', { type: 'GROUP', groupId: 'g-gone' }),
+  ];
+  const doors = [masia, family, person('p1'), contactPlate('uFriend'), group('g-live')];
+  const without = (over: { doors?: typeof doors; accepted?: { userId: string }[]; conversations?: typeof inbox } = {}) =>
+    [
+      ...conversationsWithoutDoor({
+        doors: over.doors ?? doors,
+        acceptedContacts: over.accepted ?? [],
+        conversations: over.conversations ?? inbox,
+        selfPersonId: 'me',
+        selfUserId: 'uMe',
+      }),
+    ].sort();
+
+  it('a deleted group\'s chat (no live group owns it), a blocked contact\'s DM and an unpinned contact\'s DM have no door', () => {
+    // `getContacts` drops the blocked and the unpinned, so neither has a `u_` plate; the deleted group has no `g_` plate.
+    expect(without({ accepted: [{ userId: 'uFriend' }, { userId: 'uRel' }] })).toEqual(['dm-blocked', 'dm-unpinned', 'grp-deleted']);
+  });
+
+  it('every kind of plate opens its rooms: the assistant (ALL her chats), the family, a member, a contact, a live group', () => {
+    const open = without({ accepted: [{ userId: 'uFriend' }, { userId: 'uRel' }] });
+    for (const id of ['ai-primary', 'ai-old', 'fam', 'dm-member', 'dm-friend', 'grp-live', 'dm-relative']) {
+      expect(open).not.toContain(id);
+    }
+  });
+
+  it('an accepted contact outside the active family\'s row (a relative of the primary family) is still a door — the circles open it', () => {
+    expect(without()).toContain('dm-relative'); // not accepted here → no door
+    expect(without({ accepted: [{ userId: 'uRel' }] })).not.toContain('dm-relative');
+  });
+
+  it('a member who left (no `m_` plate any more) leaves their DM without a door', () => {
+    expect(without({ doors: doors.filter((d) => d.id !== 'p1') })).toContain('dm-member');
+  });
+
+  it('a room the inbox has not returned is not in the answer (unknown is not unreachable); an empty inbox gives an empty set', () => {
+    expect(without({ conversations: [] })).toEqual([]);
+    expect(without()).not.toContain('brand-new-dm');
   });
 });

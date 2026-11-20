@@ -1,6 +1,7 @@
 /* The messenger's own composer. Colours come from the Mantine theme; the accent from the host's
    `--msg-accent-rgb` token (set on the conversation root above). */
 .msg-composer {
+  position: relative; /* the mention popover rides above it */
   display: flex;
   align-items: flex-end;
   gap: 8px;

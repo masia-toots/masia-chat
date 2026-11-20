@@ -516,7 +516,11 @@ class TsMlsEngine implements MlsEngine {
    * to add the KeyPackages, so each must stay valid for `KEY_PACKAGE_MIN_REMAINING_SECONDS`.
    */
   private validatorContext(
-    options: { readonly keyPackageFloorSeconds?: number; readonly sending?: boolean } = {},
+    options: {
+      readonly keyPackageFloorSeconds?: number;
+      readonly sending?: boolean;
+      readonly guardianFactsUnavailable?: boolean;
+    } = {},
   ): ValidatorContext {
     return {
       directory: this.context.directory,
@@ -535,7 +539,14 @@ class TsMlsEngine implements MlsEngine {
   ): ListLookup {
     return new ListLookup(
       this.context.directory,
-      { conversationId, mode, pins },
+      {
+        conversationId,
+        mode,
+        pins,
+        ...(this.context.operatorUserId !== undefined
+          ? { operatorUserId: this.context.operatorUserId }
+          : {}),
+      },
       this.context.directoryTimeoutMs,
     );
   }
@@ -756,11 +767,21 @@ class TsMlsEngine implements MlsEngine {
           'An Add commit carries at least one KeyPackage.',
         );
       }
-      assertProposalCounts(keyPackages.length, 0);
-      const proposals: Proposal[] = keyPackages.map((bytes) => ({
-        proposalType: 'add',
-        add: { keyPackage: this.decodeKeyPackage(bytes) },
-      }));
+      const removed = input.removeLeafIndexes ?? [];
+      if (!Array.isArray(removed)) {
+        throw fail(MlsEngineErrorCode.INVALID_ARGUMENT, 'The leaves to remove are not a list.');
+      }
+      assertProposalCounts(keyPackages.length, removed.length);
+      // Removes first: the validator keeps a removed device as a member, so it is never re-added here.
+      const proposals: Proposal[] = [
+        ...removed.map((index): Proposal => ({ proposalType: 'remove', remove: { removed: index } })),
+        ...keyPackages.map(
+          (bytes): Proposal => ({
+            proposalType: 'add',
+            add: { keyPackage: this.decodeKeyPackage(bytes) },
+          }),
+        ),
+      ];
 
       const { created, summary, lists } = await this.buildCommit(state, proposals, true);
       if (created.welcome === undefined) throw drift('an Add produced no Welcome');
@@ -886,9 +907,16 @@ class TsMlsEngine implements MlsEngine {
           'The relay acceptance time must be a finite number of milliseconds.',
         );
       }
+      if (
+        input.guardianFactsUnavailable !== undefined &&
+        typeof input.guardianFactsUnavailable !== 'boolean'
+      ) {
+        throw fail(MlsEngineErrorCode.INVALID_ARGUMENT, 'The guardian-facts flag must be a boolean.');
+      }
       return this.receiveCommit(state, input.commit, input.servedMemberDelta, {
         mode: input.backlog === true ? 'backlog' : 'live',
         acceptedAtMs: input.acceptedAtMs,
+        guardianFactsUnavailable: input.guardianFactsUnavailable === true,
       });
     });
   }
@@ -897,7 +925,11 @@ class TsMlsEngine implements MlsEngine {
     state: TsMlsGroupState,
     commitBytes: Uint8Array,
     servedDelta: MemberDelta,
-    reading: { readonly mode: ListMode; readonly acceptedAtMs: number | undefined },
+    reading: {
+      readonly mode: ListMode;
+      readonly acceptedAtMs: number | undefined;
+      readonly guardianFactsUnavailable: boolean;
+    },
   ): Promise<ProcessCommitResult> {
     const client = state.client;
     requireActive(state);
@@ -942,6 +974,7 @@ class TsMlsEngine implements MlsEngine {
     const relayTime = this.relayTimeSeconds(reading.acceptedAtMs);
     const vctx = this.validatorContext({
       keyPackageFloorSeconds: this.keyPackageFloor(state, relayTime),
+      guardianFactsUnavailable: reading.guardianFactsUnavailable,
     });
     const lists = this.listLookup(state.conversationId, reading.mode, state.listPins);
     const validated = await validateCommit(vctx, {
@@ -1003,6 +1036,12 @@ class TsMlsEngine implements MlsEngine {
       epochAuthenticator: copy(next.keySchedule.epochAuthenticator),
       memberDelta: validated.delta,
       removedFromGroup: false,
+      ...(validated.addRuleUnchecked !== undefined
+        ? { addRuleUnchecked: validated.addRuleUnchecked }
+        : {}),
+      ...(validated.addRuleChecked !== undefined
+        ? { addRuleChecked: validated.addRuleChecked }
+        : {}),
     };
   }
 
@@ -1359,6 +1398,16 @@ class TsMlsEngine implements MlsEngine {
     return guardedSync(() => {
       const { client } = ownState(groupState);
       return memberViewOf(client.ratchetTree, ownLeafIndex(client));
+    });
+  }
+
+  signatureKeyOf(groupState: GroupState, leafIndex: number): Uint8Array {
+    return guardedSync(() => {
+      const leaf = leafAt(ownState(groupState).client.ratchetTree, leafIndex);
+      if (leaf === undefined) {
+        throw fail(MlsEngineErrorCode.INVALID_STATE, `Leaf ${leafIndex} is blank.`);
+      }
+      return copy(leaf.signaturePublicKey);
     });
   }
 

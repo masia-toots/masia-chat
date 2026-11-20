@@ -1,8 +1,44 @@
 /* ── The people menu bodies: «People» (`PeoplePanel`) and «Requests» (`RequestsPanel`) ──
-   They are tab bodies inside the host's contacts menu, not a modal: the menu's panel owns the frame,
-   the scroller (container scroll, never the document) and the phone sheet's safe-area padding. The
-   door plate lives in `channel-bank.css`. Colours come from the messenger theme tokens (`--msg-*`),
-   set on each panel root, so a host theme change moves this with it. */
+   They are segment bodies of `ContactsPanel` (the «Люди» tab of the host's header menu), not a modal: the menu's panel owns
+   the frame, the scroller (container scroll, never the document) and the phone sheet's safe-area padding. Colours come
+   from the messenger theme tokens (`--msg-*`), set on each panel root, so a host theme change moves this with it. */
+
+/* ── `ContactsPanel`'s SEGMENTS (Ф2.4, 2026-11-03): People · Groups · Requests·N — a tablist of the panel's own, under the
+   host menu's tab bar. Quieter than the menu's tabs (a hairline rail with a lit underline, no frame per segment) so the
+   two rows of tabs do not read as one: the outer row says WHICH surface, this one says which list inside it. Each segment is
+   a 44 px tap target and they share the row equally (`flex: 1 1 0`), so a long translation wraps inside its own segment
+   rather than pushing a neighbour off a 320 px sheet. */
+.cpanel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cpanel__segs {
+  display: flex;
+  border-bottom: 1px solid rgba(var(--msg-accent-rgb), 0.22);
+}
+.cpanel__seg {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: color-mix(in srgb, var(--msg-fg) 65%, transparent);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+.cpanel__seg:hover { color: var(--msg-accent-fg); background: rgba(var(--msg-accent-rgb), 0.06); }
+.cpanel__seg.is-on { color: var(--msg-accent-fg); border-bottom-color: rgba(var(--msg-accent-rgb), 0.85); }
+.cpanel__seg:focus-visible { outline: 2px solid rgba(var(--msg-accent-rgb), 0.75); outline-offset: -2px; }
+.cpanel__body { min-width: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .cpanel__seg { transition: none; }
+}
 
 .circlesel { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 

@@ -34,6 +34,7 @@ import {
   encodeBase64,
   verifyDeviceListSignature,
 } from '@masia/contracts/wire';
+import { DeviceRole } from './credential.js';
 import type { ListedDevice, VerifiedDeviceList } from './mls-engine.js';
 
 export {
@@ -49,6 +50,15 @@ export interface SignedDeviceList {
   readonly version: number;
   readonly devices: readonly ListedDevice[];
   readonly signature: Uint8Array;
+}
+
+/** What a reader of lists knows beyond the list itself. */
+export interface VerifyDeviceListOptions {
+  /**
+   * The operator's user id (ADR-212 §13): an ASSISTANT entry on any other owner's list is `MALFORMED`.
+   * Every host passes it; absent only where no operator exists (tests, tools).
+   */
+  readonly operatorUserId?: string;
 }
 
 /** What a member pinned for an owner: the identity key (trust on first use) and the newest version seen. */
@@ -122,9 +132,20 @@ export async function verifyDeviceList(
   expectedUserId: string,
   served: SignedDeviceList,
   pin: DeviceListPin,
+  options: VerifyDeviceListOptions = {},
 ): Promise<{ readonly list: VerifiedDeviceList; readonly pin: DeviceListPin }> {
   if (served.userId !== expectedUserId) {
     throw new DeviceListError(DEVICE_LIST_ERRORS.OWNER_MISMATCH);
+  }
+  if (
+    options.operatorUserId !== undefined &&
+    served.userId !== options.operatorUserId &&
+    served.devices.some((device) => device.role === DeviceRole.ASSISTANT)
+  ) {
+    throw new DeviceListError(
+      DEVICE_LIST_ERRORS.MALFORMED,
+      'an assistant entry on a list that is not the operator’s',
+    );
   }
   const bytes = await verifyDeviceListSignature(pin.identityKey, {
     userId: served.userId,

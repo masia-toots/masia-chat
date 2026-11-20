@@ -7,9 +7,15 @@ import {
   sign,
 } from 'node:crypto';
 import {
+  type CreateIdentityRequestBody,
   type DeviceListEntry,
   DeviceRole,
   deviceListSigningBytes,
+  holderStatementBytes,
+  IdentityRequestPurpose,
+  identityRebindBytes,
+  identityRequestBytes,
+  pairingCommitment,
   RELAY_TOKEN_TTL_SECONDS,
 } from '@masia/relay';
 import { buildKeyPackage, buildPrivateMessage, MlsContentType } from '@masia/relay/testing';
@@ -55,6 +61,8 @@ const RELAY_TABLES = [
   'device_lists',
   'device_list_versions',
   'identity_keys',
+  'identity_requests',
+  'identity_resets',
   'devices',
 ] as const;
 
@@ -83,17 +91,13 @@ export function b64(text: string): string {
 const ED25519_PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
 const ED25519_PUBLIC_KEY_LENGTH = 32;
 
-const identityKeyPairs = new Map<string, { privateKey: KeyObject; publicKey: Buffer }>();
+const derivedKeyPairs = new Map<string, { privateKey: KeyObject; publicKey: Buffer }>();
 
-/**
- * The account identity key pair of `userId`: a REAL Ed25519 pair, derived from the id so it is the
- * same every time. The relay verifies every stored device list under the pinned key, so a test that
- * uploads a list signs it with this key (`signedList`).
- */
-export function identityKeyPairOf(userId: string): { privateKey: KeyObject; publicKey: Buffer } {
-  let pair = identityKeyPairs.get(userId);
+/** A REAL Ed25519 pair derived from `label`, the same every time. Test keys only, never a real one. */
+function derivedKeyPair(label: string): { privateKey: KeyObject; publicKey: Buffer } {
+  let pair = derivedKeyPairs.get(label);
   if (pair === undefined) {
-    const seed = createHash('sha256').update(`identity:${userId}`).digest();
+    const seed = createHash('sha256').update(label).digest();
     const privateKey = createPrivateKey({
       key: Buffer.concat([ED25519_PKCS8_PREFIX, seed]),
       format: 'der',
@@ -101,15 +105,33 @@ export function identityKeyPairOf(userId: string): { privateKey: KeyObject; publ
     });
     const spki = createPublicKey(privateKey).export({ format: 'der', type: 'spki' });
     pair = { privateKey, publicKey: spki.subarray(spki.length - ED25519_PUBLIC_KEY_LENGTH) };
-    identityKeyPairs.set(userId, pair);
+    derivedKeyPairs.set(label, pair);
   }
   return pair;
 }
 
 /**
+ * The account identity key pair of `userId`: a REAL Ed25519 pair, derived from the id so it is the
+ * same every time. The relay verifies every stored device list under the pinned key, so a test that
+ * uploads a list signs it with this key (`signedList`), and a holder proof too (`holderProofOf`).
+ */
+export function identityKeyPairOf(userId: string): { privateKey: KeyObject; publicKey: Buffer } {
+  return derivedKeyPair(`identity:${userId}`);
+}
+
+/**
+ * A device's own MLS signature key pair: a REAL Ed25519 pair derived from the device id, because the
+ * relay verifies an identity request under the registered signature key (ADR-218).
+ */
+export function deviceKeyPairOf(deviceId: string): { privateKey: KeyObject; publicKey: Buffer } {
+  return derivedKeyPair(`signature:${deviceId}`);
+}
+
+/**
  * The same keys every time for the same device id, so a device list can name them. The identity key
  * is the PERSON's (one per user across their USER devices, canon §3), so it derives from `userId`
- * when given (a real Ed25519 key, `identityKeyPairOf`); the signature key is the device's own.
+ * when given (a real Ed25519 key, `identityKeyPairOf`); the signature key is the device's own
+ * (`deviceKeyPairOf`).
  */
 export function keysOf(
   deviceId: string,
@@ -117,7 +139,7 @@ export function keysOf(
 ): { identityKeyPub: string; signatureKeyPub: string } {
   return {
     identityKeyPub: identityKeyPairOf(userId).publicKey.toString('base64'),
-    signatureKeyPub: createHash('sha256').update(`signature:${deviceId}`).digest().toString('base64'),
+    signatureKeyPub: deviceKeyPairOf(deviceId).publicKey.toString('base64'),
   };
 }
 
@@ -154,6 +176,99 @@ export function signedList(
   const bytes = deviceListSigningBytes(userId, version, devices);
   const signature = sign(null, bytes, identityKeyPairOf(signer).privateKey).toString('base64');
   return { version, devices: [...devices], signature };
+}
+
+/**
+ * The holder proof of `userId`'s device `deviceId` (ADR-218 §5), as base64: the account identity key's
+ * signature over the device's holder statement. `signer` signs with ANOTHER account's key.
+ */
+export function holderProofOf(userId: string, deviceId: string, signer: string = userId): string {
+  const bytes = holderStatementBytes({
+    userId,
+    deviceId,
+    signatureKey: deviceKeyPairOf(deviceId).publicKey,
+  });
+  return sign(null, bytes, identityKeyPairOf(signer).privateKey).toString('base64');
+}
+
+/**
+ * The rebind signature (ADR-218 §6) the device an operator reset names sends to pin `identityKeyPub`
+ * (base64): its device key's signature over the rebind bytes. `signer` signs with ANOTHER device's key.
+ */
+export function rebindSignatureOf(
+  userId: string,
+  deviceId: string,
+  identityKeyPub: string,
+  resetId: string,
+  signer: string = deviceId,
+): string {
+  const bytes = identityRebindBytes({
+    userId,
+    deviceId,
+    identityKey: Buffer.from(identityKeyPub, 'base64'),
+    resetId,
+  });
+  return sign(null, bytes, deviceKeyPairOf(signer).privateKey).toString('base64');
+}
+
+/** 32 bytes derived from `label`: a stand-in transfer key or nonce for a test, never a real one. */
+export function testBytes(label: string): Buffer {
+  return createHash('sha256').update(label).digest();
+}
+
+/** An identity request as N's client builds it, and the nonce N reveals after the challenge. */
+export interface IdentityRequestDraft {
+  readonly body: CreateIdentityRequestBody;
+  /** `r_N`: what a `pair` request's commitment commits to (unused by a `backfill`). */
+  readonly deviceNonce: Buffer;
+}
+
+/**
+ * N's request (ADR-218 §1): signed by N's device key over `identityRequestBytes`, a `pair` request
+ * with the commitment to `r_N`. `label` gives a fresh transfer key and nonce; `signer` signs with
+ * ANOTHER device's key, the shape of a forgery.
+ */
+export async function identityRequestDraft(
+  device: { readonly userId: string; readonly deviceId: string },
+  purpose: IdentityRequestPurpose,
+  options: { readonly label?: string; readonly signer?: string } = {},
+): Promise<IdentityRequestDraft> {
+  const label = `${device.deviceId}:${options.label ?? 'first'}`;
+  const transferKey = testBytes(`transfer:${label}`);
+  const deviceNonce = testBytes(`nonce:${label}`);
+  const commitment =
+    purpose === IdentityRequestPurpose.PAIR
+      ? Buffer.from(
+          await pairingCommitment({
+            userId: device.userId,
+            deviceId: device.deviceId,
+            signatureKey: deviceKeyPairOf(device.deviceId).publicKey,
+            transferKey,
+            deviceNonce,
+          }),
+        )
+      : undefined;
+  const signed = identityRequestBytes({
+    userId: device.userId,
+    deviceId: device.deviceId,
+    purpose,
+    transferKey,
+    ...(commitment === undefined ? {} : { commitment }),
+  });
+  const signature = sign(
+    null,
+    signed,
+    deviceKeyPairOf(options.signer ?? device.deviceId).privateKey,
+  );
+  return {
+    body: {
+      purpose,
+      transferKey: transferKey.toString('base64'),
+      ...(commitment === undefined ? {} : { commitment: commitment.toString('base64') }),
+      signature: signature.toString('base64'),
+    },
+    deviceNonce,
+  };
 }
 
 export interface TokenClaims {
@@ -234,7 +349,7 @@ export interface Reply {
   json<T = Record<string, unknown>>(): T;
 }
 
-/** One device's view of the API: a token and the two verbs. */
+/** One device's view of the API: a token and the verbs. */
 export interface Caller {
   /** The account the DEVICE belongs to (for a GUARDIAN device: the child it guards). */
   readonly userId: string;
@@ -245,6 +360,7 @@ export interface Caller {
   readonly token: string;
   get(url: string): Promise<Reply>;
   post(url: string, payload?: object): Promise<Reply>;
+  put(url: string, payload?: object): Promise<Reply>;
   del(url: string): Promise<Reply>;
 }
 
@@ -475,7 +591,7 @@ export async function startHarness(
   const listVersions = new Map<string, number>();
 
   async function request(
-    method: 'GET' | 'POST' | 'DELETE',
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     url: string,
     token: string,
     payload?: object,
@@ -538,6 +654,7 @@ export async function startHarness(
         token,
         get: (url) => request('GET', url, token),
         post: (url, payload) => request('POST', url, token, payload),
+        put: (url, payload) => request('PUT', url, token, payload),
         del: (url) => request('DELETE', url, token),
       };
     },

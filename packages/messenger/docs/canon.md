@@ -109,9 +109,23 @@ What we claim, and what we do not:
 - A room's "Masia mode" and her membership are one fact. Any mode other than silent means she is in the
   group; silent means she is removed. Switching her on is an MLS Add: she reads from that moment only.
   Switching her off is a Remove: she cannot read any later epoch. The mode that counts is the **effective**
-  one, the mode the room acts in, never the column that stores the wish (see the phase rule below).
+  one, the mode the room acts in, never the column that stores the wish (see the consent bullet below).
+  - **Who commits that Remove (ADR-212 Amendment item 27, 2026-11-15).** Not her: MLS lets no committer remove
+    its own leaf, and the relay takes no standalone proposal. Any human member's client that has the room open
+    commits it. It acts on the host's word, not on its own cached mode: facts saying "off" make it read the
+    room's effective mode from the host, and only "not wanted" removes her. Her own «left» notice, signed by her
+    leaf, is enough by itself. The Remove runs on the first poll, is retried with a backoff, names only her
+    assistant leaves of this room, and a race between members is settled by the relay's epoch check.
+  - **Until it lands, the room says so.** The host stops reading at once: it refuses her lines and clears its
+    buffer of the room, and her custody device shreds its secrets on its next pass for the room (seconds). Her
+    leaf still receives the room's messages, though. The header mark and the note at the top of the room
+    read the tree, not the mode, so they stay until the Remove is seen, and the switch says her device still
+    receives new messages until a member's app takes it out. A room that no member opens again keeps her leaf
+    (TODO-1341).
 - Rooms that include a child default to silent. Turning her on there is a parent-level action.
-- **Phase 1: she is in no end-to-end encrypted room (ADR-117 amendment (с); decision 2026-10-11).** Whatever a
+- **Phase 1, superseded 2026-11-15 (ADR-212 Ч4): she was in no end-to-end encrypted room (ADR-117 amendment
+  (с); decision 2026-10-11).** _The rule is lifted: `masiaModeForPhase` is gone from the shared package, and an
+  encrypted room acts on its consent stamp (the next bullet). What follows is kept as the record of phase 1._ Whatever a
   room has saved, an encrypted room acts silent: the host reports silent in its snapshots and in the room list,
   provisions no custody device for it, queues no work for her, and the web client neither claims her key
   package nor builds an Add for her. Nothing is raised as an error: the security view says "Masia is not in
@@ -130,6 +144,61 @@ What we claim, and what we do not:
     limit for her replies (the host and the worker disagree), sealing her reply job at rest, an atomic "take
     this message once", and a cheap room buffer. Saved modes also need a decision before the rule is lifted:
     the column's default is "active", so every encrypted room would otherwise get her silently on that day.
+  - _Superseded in part, 2026-11-15:_ most of the list above is now built, while the phase rule still holds.
+    The web client builds its guardian policy from the host's guardian facts of each room; an account the facts
+    do not cover is a minor administered by nobody. Her replies have one length limit, shared by the host and
+    the worker. Her reply job is sealed at rest and bound to the job it rides in. The host's room buffer takes
+    a message once, atomically, and does each operation in one atomic script. Still true: the phase rule
+    (`masiaModeForPhase`) keeps every encrypted room silent. The saved-mode decision is made (a consent stamp
+    written only by the switch, ADR-212 point 1) but not built.
+    _Built since (ADR-212 §1, 2026-11-15): see the consent bullet next._
+  - _Lifted (2026-11-15, ADR-212 Ч4):_ the host's snapshots, the room list, the "rooms that want her" answer,
+    the reconcile triggers (a seat, a role, the child flag) and the boot pass of the children switch follow the
+    consent stamp; a trigger reaches the custody worker's queue again. The web client applies no rule of its
+    own: it reads the mode the host reports. The host's flag that hands encrypted rooms to her brain is no
+    longer held off by the phase; the room snapshot still keeps the brain out of every room she is not in.
+    _Amended the same day:_ "no rule of its own" now has one exception, the custody bullet next.
+- **No custody worker, no Masia in encrypted rooms (ADR-212 Ч4, 2026-11-15).** Her device exists only where her
+  custody worker runs, and a deployment may run without it. Whether it does is ONE fact of the host: the worker's
+  internal token is set (`masiaCustodyConfigured`; no second flag). Without it every encrypted room acts silent
+  whatever is saved or stamped (the shared rule `masiaModeWithCustody`, applied first in the effective mode), asking
+  for her in an encrypted room is refused with a stable code before anything is counted, stamped, saved or queued
+  (`MASIA_DEVICE_NOT_CONFIGURED`), and nothing is queued for the worker. The host tells the web client through
+  the read it already makes of its own access (`masiaCustody`); the client applies the same shared rule to the mode
+  it hands its engine, so an inbox read before the fact changed never builds her Add, and a fact not known yet
+  counts as off. Turning her off and every plaintext room work as usual. This is what lets the host ship to a
+  machine without the worker safely.
+- **Consent is a recorded fact (ADR-212 §1, 2026-11-15).** An encrypted room has her only while a **consent
+  stamp** stands: who switched her on through the room's switch, and when. The switch is its only writer. A
+  creation default, a group's default and a room born encrypted write none, so every room saved before the
+  stamp existed, and every new encrypted room, acts silent until someone switches her on. The stamp counts
+  while the person who consented is still seated in the room and, with a child seated, administers every
+  child (and the host's "Masia in rooms with children" switch is on); otherwise the room acts silent.
+  - Switching between two "on" modes (listening ↔ active) in an encrypted room is a new consent: it needs the
+    same authority as switching her on and re-stamps it to the caller. Repeating the saved mode is no change.
+  - The consent **lapses**, and comes back only through the switch, when the consenter leaves (their person
+    is removed from the family, or they leave the room's group) and when a child they do not administer is
+    seated. A consenter who loses the admin role of a seated child silences her at once: the read is
+    fail-closed, the stamp stays for an administrator to take over by switching her on again.
+    **Superseded 2026-11-15 (review):** the stamp does not stay. One rule says whether a consent still stands
+    (its giver has a say in the room and administers every child seated), and every change of the roster — a
+    seat, a role, a child flag, a member removed — clears a stamp that no longer does, so neither the role
+    back nor the flag back brings her in again: an administrator switches her on. A stamp the switch has just
+    written is checked again after the write, so a change landing while it ran clears it too. The host's
+    "Masia in rooms with children" switch clears no stamp: it keeps her out while off.
+  - Turning encryption on for an existing room resets her to silent with no stamp, so a plaintext room's
+    "on" never carries over. An investigation is never switched to encryption.
+  - In an encrypted room of people of more than one family she is a **guest**: she answers from the room
+    alone, with no family's knowledge, and the family of the person the stamp names pays (never whoever a
+    default once recorded). No stamp, or its giver no longer seated: nobody to bill, she stays silent. The
+    host marks such a room per row (`masiaGuest`) so the client can say so in the header while she is in
+    the room; a room of one family, and every room that is not encrypted, is never a guest room.
+    **Clarified 2026-11-15 (review):** "of one family" means seated as that family's full members. A family's
+    guest or contributor is a visitor: one seated makes the room a guest room, and a visitor has no say — only
+    an account whose every seat in the room is a full member's seat of one family switches her on, and only
+    such a seat names the family that pays.
+  - _Until the phase rule above is lifted, the stamp is written, kept and lapsed, but decides nothing._
+    **Superseded 2026-11-15 (ADR-212 Ч4): the rule is lifted, and the stamp decides.**
 - The roster is honest: she appears in the member list, and every change is a system line in the thread.
 - Her key is **per conversation**. The private keys live in a separate custody service, outside the
   messenger's database and API process, which hands decrypted text only to the pipeline of that one room. A
@@ -181,7 +250,9 @@ _Until 2026-10-10 the third role was spelled `MASIA`; it is the same role under 
   (п)): `POST /users/me/device-list` is checked with the same `verifyDeviceListSignature` against the
   identity key pinned for the account, in the same transaction as the write; a list that does not verify (or an
   account with no pinned key) is 422 `DEVICE_LIST_SIGNATURE_INVALID`, entries no member could accept are 422
-  `DEVICE_LIST_ENTRY_INVALID`. Members still verify what they are served; the relay is not trusted for it. The
+  `DEVICE_LIST_ENTRY_INVALID` (an `ASSISTANT` entry on a list that is not the operator's among them, ADR-212 §13;
+  members check the same with `verifyDeviceList(…, { operatorUserId })`, and the engine refuses such a leaf as
+  `ASSISTANT_NOT_OPERATOR`). Members still verify what they are served; the relay is not trusted for it. The
   check exists because every reader verifies the whole chain of versions from the one it pinned: one stored
   version nobody can verify would block the list for everyone, for good, and any active device of the account
   could upload it without holding the identity key.
@@ -245,13 +316,18 @@ which the engine, the relay and the host all import.
   - `USER` (code 1): a person's own device. Registered by that person, on their own account.
   - `GUARDIAN` (code 2): a parent's device that sits on a **child's** account and reads the child's rooms,
     visibly ([step 5](#3-devices)). Only an adult whose token lists that child in `guardianOf` may register
-    it; it may be removed from a room only by an admin of that child.
+    it; it may be removed from a room only by an admin of that child. (Clarified 2026-11-15: an admin of
+    that child **as a minor**. On the relay that is a token whose `guardianOf` lists the child, from any of
+    its devices; `adminOf` alone is not enough, since the admin of a family where the child is only a plain
+    member would otherwise qualify. In the engine it is an admin of the child, or a guardian device of the
+    same child whose owner is one.)
   - `ASSISTANT` (code 3): an AI assistant's device, one per conversation, bound to that conversation inside
     its signed list entry ([section 2](#2-masia-is-a-visible-opt-in-member)). Adding it to a room that holds
     a minor needs a committer who administers every such minor.
 - **The admin scope of a token.** The host's token names the user and the device and, for a family
   admin only, `role: FAMILY_ADMIN` with `adminOf` (the OTHER users the admin may act for, never the admin
-  themself, at most 64) and `guardianOf` (the minors among them). `role` alone grants nothing; each list is
+  themself, at most 64) and `guardianOf` (the minors among them; clarified 2026-11-15: only those who are a
+  child in a family the admin administers). `role` alone grants nothing; each list is
   checked by the relay against the action. The relay does not know what a family is: it knows these lists.
 - **The operator principal.** One account, configured on the relay (`RELAY_OPERATOR_USER_ID`, no default:
   unset means no assistant device can be registered), owns every `ASSISTANT` device. Its device list is
@@ -387,7 +463,8 @@ The relay sees **who talks to whom and when**, never what. We say that plainly.
   child's account and only an adult whose token lists that child in `guardianOf` may register it there; a
   ASSISTANT device only the operator principal may register
   ([Roles and principals](#roles-and-principals-the-household-model-in-the-wire)). A guardian's device may be removed from a
-  room only by an admin of that child (the engine's rule, mirrored on the relay).
+  room only by an admin of that child as a minor (the engine's rule, mirrored on the relay: a token whose
+  `guardianOf` lists the child; `adminOf` alone is not enough).
 - Delivery rows of encrypted conversations are kept for a stated, short retention (30 days,
   `RELAY_BACKLOG_RETENTION_SECONDS`, one constant in `@masia/contracts/wire` that the engine and the relay
   both import), and a periodic job really deletes
@@ -453,6 +530,37 @@ The relay sees **who talks to whom and when**, never what. We say that plainly.
   "sign in again" when the relay refused this device ([section 11](#11-the-hosts-engine-a-worker-and-what-this-device-means)).
   _Built: the components, and the first host (the web app) fills the value from the engine running in a
   Worker. Guardians, device names and the epoch lines wait for the signed device lists on the host._
+- **A line somebody typed is never lost in silence.** When a send is refused — the host answered no, the link
+  was dead, or an encrypted room could not seal it — the message **stays in the thread**, marked "not sent",
+  with a retry beside it (`MessengerMessage.sendFailed`, `UseMessengerReturn.retrySend`). It is neither removed
+  nor left looking sent: the one thing a person must be able to trust is that what the thread shows is what the
+  room has. The **reason** stays on the room's security strip (read-only because another tab holds it, removed,
+  sign in again); the bubble says only that it did not leave and offers to send it again, because a person who
+  sees their words can retype or retry them, and a person whose words vanished has nothing left to do.
+  _Built: both hooks (the plaintext one in this package, the encrypted one in the host) and the bubble, since
+  2026-11-07, after a report of a private room where a refused send cleared the composer and showed nothing._
+  **The line outlives the screen (since 2026-11-17).** A message of mine that the server has not confirmed lives
+  in an **outbox** outside the screen that sent it (`hooks/outbox-store.ts`, a subscriber store), not in the
+  screen's state, so a tab switch, a conversation switch or a remount no longer takes a "not sent" line away. The
+  plaintext outbox (`hooks/messenger-outbox.ts`) is written to browser storage per account and conversation and
+  survives a reload too (after one, the line reads "not sent"); an encrypted room's outbox is the host's and
+  stays in memory, because what is typed there must never sit in plain browser storage. Every text shows **at
+  once**, like a sticker: a row that waited for its echo vanished unseen when the server dropped the frame. A
+  line is `sending`, then `unconfirmed` (the host took the command; taking is not delivering), then gone on its
+  echo, or `failed` (refused, the link went down, or the page was reloaded). One the host took whose echo never
+  came is compared with the next history page and dropped when the page shows it. A failed line keeps its place
+  by time; a line on its way stays at the end. The "not sent" strip offers **Retry** and **Delete** (local only:
+  nothing was sent to delete), and the line's menu is **Copy** only, because there is no server id to reply to,
+  edit, react to or delete. A host may also put a line in place of the composer
+  (`MessengerChatViewProps.composerBlock`) where nothing can be sent from this device; the encrypted host does so
+  on a device the account has not added yet, before anyone types.
+  **One set of rules for every outbox (since 2026-11-18).** What happens to an entry between the send and the
+  echo (settle against a history page, fail what waits when the link goes down, weave failed and waiting rows
+  into the thread) is written once, in `hooks/outbox-rules.ts`. The plaintext outbox uses it, and so does a host
+  that keeps an outbox of its own for another chat (the host's chat with its assistant does): that host says only
+  how its rows look, in the same `outbox-store`, and reuses the "not sent" strip (`UnsentRow`). A host's link must
+  say whether a frame was taken: inside a reconnect grace the link may still read "connected" with no open socket
+  under it, and a frame sent then is refused (503), never dropped.
 - **The relay orders; clients verify.** The relay stores and serves the member change a committer declares and
   checks the cleartext MLSMessage header (group id, epoch, content type) against the room. It cannot know
   whether a declared change is true; every member compares it with what the decrypted commit does and
@@ -522,6 +630,15 @@ the host:
   passes. The host hands its own components in through `MessengerUiProvider`, which also carries the host
   facts that are neither a word nor a picture (the bank's window sizes, the "phone" media query, the reaction
   emoji, how an error is shown).
+- **The next send has one intent, and the view owns it.** `reply` quotes a message, `edit` replaces an own one;
+  one strip above the composer shows it, ✕ and Esc cancel it. The `⋮` rows of a bubble (Reply · Copy · Edit ·
+  Delete) come from one builder, `messageActionRows`, which a host drawing its own bubble imports. The message
+  input slot only reports keys: `initialDraft` seeds an edit, `onRecallLast` says ArrowUp was pressed in an
+  empty draft, and the VIEW picks the last own text message to recall (the composer owns no messages). A reply
+  shows its parent through `replyToPreview`: the host's server joins the parent for history and live events,
+  the view fills it from the loaded list when the server could not, a deleted parent is worded and never
+  quoted, and an encrypted room carries the quote inside the payload ([section 10](#10-what-travels-inside-the-ciphertext)).
+  Decided in an internal record (ADR-199) and summarised here.
 - **The security state is one value and one wiring point.** `ConversationSecurityState`
   (`@masia/messenger/protocol`) is a plain description of a room: end-to-end `off | pending | on`, whether
   Masia is present, the guardians, the key version and the epoch authenticator, the room's devices (role,
@@ -1047,6 +1164,12 @@ promises. The web host (the first one, wired 2026-10-10) runs it like this:
   packages, signed device lists. Group states and keys still never leave the Worker; a script in the page
   could read what the relay reads, not more. The second honest limit of the bridge, closed by the same
   target as the first.
+  The page's bridge has the same blind spot, so the Android app must also be told an address OFF the app's
+  own origin (prod, build 179: the bridged `fetch` skips every URL that starts with the app's origin and the
+  shell answers it from the bundle again). The host does that: a token request from the Android app gets the
+  relay's address moved to the native backend origin with its path kept, the same host the app's api calls
+  already use (`nativeReachableUrl` in the host's shared package, ADR-117 amendment (х)). Same relay, same
+  token, same bytes; only the door differs.
 - **This device, in the sheet.** `ConversationSecurityState.thisDevice` says whether the engine is isolated
   and where the keys rest (`hardware` or `browser`), and the browser line says what that store does not
   protect. A value the host does not know is absent; nothing is rounded up.
@@ -1079,14 +1202,17 @@ promises. The web host (the first one, wired 2026-10-10) runs it like this:
   (`RelayCursorAtJoin`); a joiner saves the joined room BEFORE it spends the KeyPackage's secret (a failed save
   keeps the package, so the same Welcome still opens on the next entry; nothing re-Adds a device already in
   the tree). Every member adds the devices that are on a person's verified signed list and not in
-  the tree (new people, a member's new device, and, once the phase rule is lifted, Masia's custody device when the
-  room's effective mode wants her; in phase 1 that last one is never asked for, see
+  the tree (new people, a member's new device, and Masia's custody device when the room's effective mode wants
+  her, that is, a valid consent stamp stands and the host has her custody worker; _until the phase rule was
+  lifted on 2026-11-15 that last one was never asked for_; see
   [section 2](#2-masia-is-a-visible-opt-in-member)), one Add commit per person, so one person's refusal does not block the next; several members may add the same
   device at once, the relay serves one commit per epoch and the loser finds nothing left to add. Unsent
   messages survive `REJOIN_NEEDED` as drafts and are sealed again once the device is added back.
 - **The banner.** `E2eeRoomBanner` (above the thread) is quiet when all is well. It shows the code a new
   device waits with, one line per refusal (once per kind; never a user id or an engine code), "Try again"
-  where asking again can help, and "Add a device" where this device holds the identity key. The words are the
+  where asking again can help; nothing else. It is for what blocks or waits: "Add another device", offered where
+  this device holds the identity key, is not a link in the banner but a row of the host's chat menu (an end-to-end
+  room only), and the approval dialog it opens is the host's one. The words are the
   `messenger:e2ee.enrol.*` keys in ua, en and de.
 - **Per room.** A room is end-to-end encrypted when the host's inbox says so (`e2ee: true`); every other room
   keeps the plaintext path unchanged.

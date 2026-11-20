@@ -29,6 +29,7 @@ import {
 } from './constants.js';
 import { decodeId, type DeviceIdentity, DeviceRole, encodeId, identityOf } from './credential.js';
 import type {
+  AddRuleSubject,
   DeviceDirectory,
   GuardianPolicy,
   ListedDevice,
@@ -70,6 +71,11 @@ export interface ValidatorContext {
    * commit a package its receivers find already expired.
    */
   readonly sending?: boolean;
+  /**
+   * ADR-212 §5, receive only: the host has no current guardian facts, so `assertMayAdd` is not asked;
+   * the commit's summary carries `addRuleUnchecked` instead when the rule had something to judge.
+   */
+  readonly guardianFactsUnavailable?: boolean;
 }
 
 // --- Small helpers ---------------------------------------------------------------------------------
@@ -153,6 +159,28 @@ export interface ListScope {
   readonly mode: ListMode;
   /** userId -> the list version pinned at the previous epoch. A user without a pin is pinned at 0. */
   readonly pins: ReadonlyMap<string, number>;
+  /**
+   * The operator's user id: the only user an ASSISTANT leaf may belong to (ADR-212 §13). Absent: not
+   * checked here (the signed list still binds the leaf to its conversation).
+   */
+  readonly operatorUserId?: string;
+}
+
+/** ADR-212 §13: an ASSISTANT identity is valid only on the operator's user id (when the host names it). */
+export function assertAssistantIsOperator(
+  identity: Pick<DeviceIdentity, 'userId' | 'role' | 'deviceId'>,
+  operatorUserId: string | undefined,
+): void {
+  if (
+    operatorUserId !== undefined &&
+    identity.role === DeviceRole.ASSISTANT &&
+    identity.userId !== operatorUserId
+  ) {
+    throw fail(
+      MlsEngineErrorCode.ASSISTANT_NOT_OPERATOR,
+      `Device ${identity.deviceId} claims the assistant role for a user who is not the operator.`,
+    );
+  }
 }
 
 /** The pin of a user nobody has seen yet: any verified version counts (the KeyPackage window still bounds it). */
@@ -258,6 +286,7 @@ export class ListLookup {
    * `DIRECTORY_UNAVAILABLE`, not `LEAF_NOT_IN_SIGNED_LIST`: the newer list was never seen.
    */
   async require(identity: DeviceIdentity, signatureKey: Uint8Array): Promise<number> {
+    assertAssistantIsOperator(identity, this.scope.operatorUserId);
     const { userId } = identity;
     const wanted = this.wanted(identity, signatureKey);
     let version = await this.lookup(userId, wanted);
@@ -579,6 +608,10 @@ export interface ValidatedCommit {
   /** The committer's new leaf from the UpdatePath, when there is one. */
   readonly pathLeafFingerprint: string | undefined;
   readonly delta: MemberDelta;
+  /** Set when the Add rule applied but was skipped (`ValidatorContext.guardianFactsUnavailable`). */
+  readonly addRuleUnchecked?: AddRuleSubject;
+  /** Set when the Add rule applied and let the commit through: what it judged. */
+  readonly addRuleChecked?: AddRuleSubject;
 }
 
 /**
@@ -751,6 +784,10 @@ export function keyServedRemovals(
 }
 
 export interface ProposalSummary {
+  /** Set when the Add rule applied but was skipped (`ValidatorContext.guardianFactsUnavailable`). */
+  readonly addRuleUnchecked?: AddRuleSubject;
+  /** Set when the Add rule applied and let the commit through: what it judged. */
+  readonly addRuleChecked?: AddRuleSubject;
   readonly adds: readonly ValidatedAdd[];
   readonly removes: readonly ValidatedRemove[];
   readonly delta: MemberDelta;
@@ -792,23 +829,65 @@ export function assertMayAdd(
   committer: DeviceIdentity,
   added: readonly DeviceIdentity[],
   roomAfter: readonly DeviceIdentity[],
+  roomBefore: readonly DeviceIdentity[] = [],
 ): void {
-  if (!added.some((device) => device.role === DeviceRole.ASSISTANT)) return;
-  const minors = new Set<string>();
-  for (const member of roomAfter) {
-    if (member.role === DeviceRole.ASSISTANT) continue;
-    if (member.role === DeviceRole.GUARDIAN || policy.isMinor(member.userId)) {
-      minors.add(member.userId);
+  if (added.some((device) => device.role === DeviceRole.ASSISTANT)) {
+    const minors = new Set<string>();
+    for (const member of roomAfter) {
+      if (member.role === DeviceRole.ASSISTANT) continue;
+      if (member.role === DeviceRole.GUARDIAN || policy.isMinor(member.userId)) {
+        minors.add(member.userId);
+      }
     }
+    for (const minor of minors) {
+      if (!policy.isAdminOf(committer.userId, minor)) {
+        throw fail(
+          MlsEngineErrorCode.ASSISTANT_ADD_FORBIDDEN,
+          'Adding Masia to a room with a minor is a parent action: the committer does not administer every minor in it.',
+        );
+      }
+    }
+    return;
   }
-  for (const minor of minors) {
-    if (!policy.isAdminOf(committer.userId, minor)) {
+  // The other direction (ADR-212 §6): Masia is already in the room, and the commit brings a minor in —
+  // a GUARDIAN leaf (it carries the child's user id), or the first USER device of a minor. Only an
+  // administrator of that minor may. A further device of a minor who already holds a USER leaf here
+  // brings nobody new to Masia, so the child's own new phone is not held to the parent rule.
+  if (!roomAfter.some((member) => member.role === DeviceRole.ASSISTANT)) return;
+  const present = new Set(
+    roomBefore.filter((member) => member.role === DeviceRole.USER).map((member) => member.userId),
+  );
+  for (const device of added) {
+    const bringsMinor =
+      device.role === DeviceRole.GUARDIAN ||
+      (device.role === DeviceRole.USER &&
+        !present.has(device.userId) &&
+        policy.isMinor(device.userId));
+    if (bringsMinor && !policy.isAdminOf(committer.userId, device.userId)) {
       throw fail(
-        MlsEngineErrorCode.ASSISTANT_ADD_FORBIDDEN,
-        'Adding Masia to a room with a minor is a parent action: the committer does not administer every minor in it.',
+        MlsEngineErrorCode.MINOR_ADD_FORBIDDEN,
+        'Bringing a minor into a room Masia is in is a parent action: the committer does not administer that minor.',
       );
     }
   }
+}
+
+/**
+ * Would `assertMayAdd` have anything to judge in this commit? True when it adds Masia, or adds any
+ * device to a room Masia stays in. A host without guardian facts (ADR-212 §5) processes such a commit
+ * unchecked and must judge it later with the same `assertMayAdd`.
+ */
+export function addRuleApplies(
+  added: readonly DeviceIdentity[],
+  roomAfter: readonly DeviceIdentity[],
+): boolean {
+  if (added.length === 0) return false;
+  return roomAfter.some((member) => member.role === DeviceRole.ASSISTANT);
+}
+
+/** The late verdict on a commit processed unchecked (`ProcessCommitResult.addRuleUnchecked`). */
+export function assertAddRule(policy: GuardianPolicy, subject: AddRuleSubject): void {
+  assertMayAdd(policy, subject.committer, subject.added, subject.roomAfter, subject.roomBefore);
 }
 
 /**
@@ -831,6 +910,7 @@ export async function validateProposals(
     const identity = identityOf(leaf);
     roomAfter.set(deviceKey(identity), identity);
   }
+  const roomBefore = [...roomAfter.values()];
   const members = new Set(roomAfter.keys());
   const adds: ValidatedAdd[] = [];
   const removes: ValidatedRemove[] = [];
@@ -898,14 +978,25 @@ export async function validateProposals(
       `The group would have more than ${MAX_GROUP_LEAVES} devices.`,
     );
   }
-  assertMayAdd(
-    ctx.policy,
-    committer,
-    adds.map(({ identity }) => identity),
-    [...roomAfter.values()],
-  );
+  const added = adds.map(({ identity }) => identity);
+  const after = [...roomAfter.values()];
+  // ADR-212 §5: a receiver whose host has no guardian facts stays in the epoch rather than reject a
+  // commit it cannot judge; it hands the question back (`addRuleUnchecked`) for a later verdict. Never
+  // when sending: with no facts the host refuses to commit such an Add itself.
+  const skipAddRule = ctx.guardianFactsUnavailable === true && ctx.sending !== true;
+  const subject: AddRuleSubject | undefined = addRuleApplies(added, after)
+    ? { committer, added, roomAfter: after, roomBefore }
+    : undefined;
+  if (!skipAddRule) assertMayAdd(ctx.policy, committer, added, after, roomBefore);
 
   return {
+    // Either way the host learns what the rule had to judge: unchecked, for a later verdict; checked, so it
+    // can hold the commit to what the room's leaves cannot show (ADR-212 §3: a child without an account).
+    ...(subject === undefined
+      ? {}
+      : skipAddRule
+        ? { addRuleUnchecked: subject }
+        : { addRuleChecked: subject }),
     adds,
     removes,
     delta: {
@@ -1035,6 +1126,8 @@ export async function validateCommit(
     removes: summary.removes,
     pathLeafFingerprint,
     delta: summary.delta,
+    ...(summary.addRuleUnchecked !== undefined ? { addRuleUnchecked: summary.addRuleUnchecked } : {}),
+    ...(summary.addRuleChecked !== undefined ? { addRuleChecked: summary.addRuleChecked } : {}),
   };
 }
 

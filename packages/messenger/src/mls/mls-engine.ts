@@ -129,6 +129,24 @@ export interface MlsEngineContext {
    * `DIRECTORY_UNAVAILABLE`. Default `DIRECTORY_TIMEOUT_MS`.
    */
   readonly directoryTimeoutMs?: number;
+  /**
+   * The operator's user id (ADR-212 §13): an ASSISTANT leaf of any other user is refused
+   * (`ASSISTANT_NOT_OPERATOR`) wherever the engine reads a leaf. Every host passes it; absent only in
+   * tests and tools that run without an operator.
+   */
+  readonly operatorUserId?: string;
+}
+
+/**
+ * One commit's question to `assertMayAdd` (ADR-212 §5): who committed, whom it added, and the room's
+ * devices before and after. Carried by `ProcessCommitResult.addRuleUnchecked` when the host processed
+ * the commit without guardian facts; the host judges it later with `assertAddRule`.
+ */
+export interface AddRuleSubject {
+  readonly committer: DeviceIdentity;
+  readonly added: readonly DeviceIdentity[];
+  readonly roomAfter: readonly DeviceIdentity[];
+  readonly roomBefore: readonly DeviceIdentity[];
 }
 
 /** A current member, as read from the MLS tree (never from relay metadata). */
@@ -207,6 +225,13 @@ export interface AddInput {
   readonly state: GroupState;
   /** Public KeyPackages (MLSMessage bytes), as claimed from the relay. */
   readonly keyPackages: readonly Uint8Array[];
+  /**
+   * Leaves to Remove in the SAME commit (ADR-218 §6): the devices their owner's newest verified list no
+   * longer carries go out with the Adds, so a joiner's whole-tree check sees only listed devices. Judged
+   * like a `remove` (never the committer, a GUARDIAN only under `GuardianPolicy`), and a device cannot be
+   * removed and added in one commit. The commit then carries an UpdatePath.
+   */
+  readonly removeLeafIndexes?: readonly number[];
 }
 
 /** What every commit we build returns besides its own fields. */
@@ -225,10 +250,11 @@ export interface AddResult extends OwnCommitResult {
   readonly welcome: Uint8Array;
   readonly memberDelta: MemberDelta;
   /**
-   * Always true. An Add commit carries no UpdatePath (RFC 9420 §12.4 allows that, and ts-mls cannot
-   * be told to add one), so the tree is "cold" and the newcomer's leaf is the only new key
+   * Always true. An Add-only commit carries no UpdatePath (RFC 9420 §12.4 allows that, and ts-mls
+   * cannot be told to add one), so the tree is "cold" and the newcomer's leaf is the only new key
    * material. The newcomer therefore does a `selfUpdate` right after joining (post-compromise
-   * security, and a 6x smaller commit later: library benchmark, docs/adr/0003).
+   * security, and a 6x smaller commit later: library benchmark, docs/adr/0003). An Add that also
+   * removes (`removeLeafIndexes`) does carry one; the newcomer's update is then merely harmless.
    */
   readonly requiresNewcomerUpdate: true;
 }
@@ -270,6 +296,13 @@ export interface ProcessCommitInput {
    * times, never a value derived from this device's clock.
    */
   readonly acceptedAtMs?: number;
+  /**
+   * ADR-212 §5: the host has no current guardian facts for this room. The commit is then processed
+   * WITHOUT the Add rule (both directions of `assertMayAdd`) — a receiver that rejected what it cannot
+   * judge would only fall out of the epoch — and the result's `addRuleUnchecked` names what the rule
+   * would have judged. Every other rule (lists, removals, the outcome check) still applies.
+   */
+  readonly guardianFactsUnavailable?: boolean;
 }
 
 export interface ProcessCommitResult {
@@ -283,6 +316,14 @@ export interface ProcessCommitResult {
   readonly memberDelta: MemberDelta;
   /** True when the commit removed this very device; `state` is then inactive. */
   readonly removedFromGroup: boolean;
+  /** Set when `guardianFactsUnavailable` skipped an Add rule that had something to judge. */
+  readonly addRuleUnchecked?: AddRuleSubject;
+  /**
+   * Set when the Add rule judged this commit and let it through: what it judged. The engine sees only the
+   * room's leaves; the host holds an Add of Masia to its guardian facts as well (ADR-212 §3: a child without
+   * an account, the children switch).
+   */
+  readonly addRuleChecked?: AddRuleSubject;
 }
 
 export interface JoinFromWelcomeInput {
@@ -338,7 +379,8 @@ export interface MlsEngine {
   /**
    * Adds devices. Each KeyPackage is validated like an incoming one (suite, lifetime, credential
    * and signature key against the signed list). Returns the commit to post, the Welcome to hand to
-   * the newcomers, and the member delta to declare beside the commit.
+   * the newcomers, and the member delta to declare beside the commit. `removeLeafIndexes` takes
+   * leaves out in the same commit (ADR-218 §6).
    */
   add(input: AddInput): Promise<AddResult>;
 
@@ -406,6 +448,13 @@ export interface MlsEngine {
 
   /** This device's own leaf. */
   self(state: GroupState): MemberView;
+
+  /**
+   * The signature public key of the leaf at `leafIndex` (a copy). The leaf a device signs with must be
+   * the key its owner's signed list carries for it; a member that compares a leaf with that list reads
+   * it here (ADR-218 §6). Throws `INVALID_STATE` when the leaf is blank or out of the tree.
+   */
+  signatureKeyOf(state: GroupState, leafIndex: number): Uint8Array;
 
   conversationId(state: GroupState): string;
   groupId(state: GroupState): Uint8Array;

@@ -28,6 +28,20 @@ import type { SeedContact } from '../../contacts/seed-contacts.js';
 import type { SecurityStateSource } from './security-source.js';
 import type { MessengerUiSlots } from './slots.js';
 
+/**
+ * What the conversation says about its rows when it hands the host the reply swipe: which element is a row, which rows can be
+ * answered, and what to do when the host reports a row was swiped. The package draws no gesture itself (it has no UI dependency):
+ * the host's thumb machinery follows the finger and reports the commit.
+ */
+export interface ReplySwipeSpec {
+  /** A CSS selector for ONE message row of the list (matched from where the finger came down, never above the list's root). */
+  readonly rowSelector: string;
+  /** Can this row be answered? (Not a deleted message, not a turn the server has not confirmed.) */
+  canReply(row: HTMLElement): boolean;
+  /** The row was swiped past the line and let go: open the reply on it, as the menu's «Reply» does. */
+  reply(row: HTMLElement): void;
+}
+
 /** Host facts and behaviours that are neither a colour, a word nor a picture. */
 export interface MessengerUiEnv {
   /**
@@ -50,6 +64,12 @@ export interface MessengerUiEnv {
    * scroller it clips its window to by one `data-*` attribute). Nothing the messenger reads itself.
    */
   readonly scrollerAttrs?: Readonly<Record<`data-${string}`, string>>;
+  /**
+   * The reply swipe (a finger pulls a message right → «Reply»): the host attaches its gesture to the conversation's scroller and
+   * returns the detach. `read` is asked at every press, so the spec is always the latest. Absent: no swipe (the `⋮` menu's Reply
+   * row, which every bubble keeps, is the same action).
+   */
+  attachReplySwipe?(root: HTMLElement, read: () => ReplySwipeSpec): () => void;
 }
 
 /** What a host passes to `MessengerUiProvider`. */

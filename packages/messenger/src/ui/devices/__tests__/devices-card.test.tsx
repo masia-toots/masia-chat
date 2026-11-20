@@ -139,7 +139,7 @@ describe('DevicesCard: the list', () => {
 
   it('any other failure names the load error, and a thrown request does too', async () => {
     await mount(scriptedTransport({ [`GET ${PATH}`]: () => json(500, {}) }).transport);
-    expect(q('[role=status]')?.textContent).toBe('Could not load the device list.');
+    expect(q('[role=status]')?.textContent).toBe('Couldn’t load the device list.');
     cleanupUi();
 
     await mount({
@@ -147,7 +147,7 @@ describe('DevicesCard: the list', () => {
         throw new Error('offline');
       },
     });
-    expect(q('[role=status]')?.textContent).toBe('Could not load the device list.');
+    expect(q('[role=status]')?.textContent).toBe('Couldn’t load the device list.');
   });
 });
 
@@ -196,7 +196,7 @@ describe('DevicesCard: revoke', () => {
     await mount(transport);
     click(revokeButtons()[0]!);
     await flush();
-    expect(q('[role=status]')?.textContent).toBe('Could not log that device out.');
+    expect(q('[role=status]')?.textContent).toBe('Couldn’t log that device out.');
     expect(rows()).toHaveLength(2);
   });
 
@@ -210,7 +210,7 @@ describe('DevicesCard: revoke', () => {
     await mount(transport);
     click(revokeButtons()[0]!);
     await flush();
-    expect(q('[role=status]')?.textContent).toBe('Could not log that device out.');
+    expect(q('[role=status]')?.textContent).toBe('Couldn’t log that device out.');
   });
 });
 
