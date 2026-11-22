@@ -96,6 +96,14 @@ describe('call signal contract — server frames, as a client reads them', () =>
       .toEqual({ type: 'call:end', payload: { callId: CALL_ID, reason: 'answered-elsewhere' } });
   });
 
+  it('`call:ring` names the room and the caller as wire ids: the API’s uuids, and a relay call channel’s ids', () => {
+    const ring = parseCallServerEvent({
+      type: 'call:ring',
+      payload: { callId: CALL_ID, conversationId: 'dm_alice_bob', callerUserId: 'alice', callerDeviceId: 'alice-phone', ringUntil: AT },
+    });
+    expect(ring?.type === 'call:ring' ? ring.payload.conversationId : null).toBe('dm_alice_bob');
+  });
+
   it('`call:ring`’s `silent` is true only when the server says exactly true: missing or anything else rings (review Д2б L2)', () => {
     const ring = (extra: Record<string, unknown>) =>
       parseCallServerEvent({
@@ -118,7 +126,11 @@ describe('call signal contract — server frames, as a client reads them', () =>
     expect(parseCallServerEvent({ type: 'call:invite', payload: { requestId: 'req-12345', callId: CALL_ID, ringUntil: 'soon' } })).toBeNull();
     expect(parseCallServerEvent({
       type: 'call:ring',
-      payload: { callId: CALL_ID, conversationId: 'not-a-uuid', callerUserId: USER, callerDeviceId: 'd1', ringUntil: AT },
+      payload: { callId: CALL_ID, conversationId: 'not/a/wire/id', callerUserId: USER, callerDeviceId: 'd1', ringUntil: AT },
+    })).toBeNull();
+    expect(parseCallServerEvent({
+      type: 'call:ring',
+      payload: { callId: CALL_ID, conversationId: CONV, callerUserId: 'u'.repeat(129), callerDeviceId: 'd1', ringUntil: AT },
     })).toBeNull();
     expect(parseCallServerEvent({
       type: 'call:ring',

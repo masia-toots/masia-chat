@@ -3,6 +3,7 @@ import {
   generateIdentityKeyPair,
   type GuardianPolicy,
 } from '@masia/messenger/mls';
+import type { CallKey } from '@masia/messenger/call/call-binding';
 import type { E2eePayloadInput } from '@masia/messenger/protocol';
 import { createRelayDirectory } from './directory.js';
 import { enrol, type Enrolment } from './enrol.js';
@@ -69,7 +70,20 @@ export interface PlaygroundRuntime {
   markSeen(conversationId: string): void;
   /** One round of polling now (tests, and the smoke driver). */
   pollOnce(): Promise<void>;
+  /** The relay as this tab reaches it, for the call channel: its base URL (relative in the page) and a token. */
+  readonly relay: RelayAccess;
+  /**
+   * The call key of a room (its MLS exporter for `callId`) at the epoch this tab holds; `fresh` catches the room up
+   * first. Rejects for a room this tab has not opened yet.
+   */
+  callKey(conversationId: string, callId: string, fresh: boolean): Promise<CallKey>;
   stop(): void;
+}
+
+export interface RelayAccess {
+  readonly baseUrl: string;
+  /** This tab's relay token, renewed before it expires. */
+  token(): Promise<string>;
 }
 
 export interface StartInput {
@@ -92,9 +106,10 @@ export async function startRuntime(input: StartInput): Promise<PlaygroundRuntime
 
   const signedIn = await signIn(input.name, doFetch);
   const tokens = createTokenSource(signedIn.session, doFetch);
+  const relayBaseUrl = `${origin}${RELAY_BASE}`;
   const api =
     input.createApi?.(signedIn) ??
-    createRelayApi({ baseUrl: `${origin}${RELAY_BASE}`, token: (force) => tokens.token(force), fetch: baseFetch });
+    createRelayApi({ baseUrl: relayBaseUrl, token: (force) => tokens.token(force), fetch: baseFetch });
 
   // The person's identity key comes first: the directory pins it as this tab's own, and the engine
   // needs the directory before it can make a key package.
@@ -242,6 +257,11 @@ export async function startRuntime(input: StartInput): Promise<PlaygroundRuntime
       }
     },
     pollOnce,
+    relay: { baseUrl: relayBaseUrl, token: () => tokens.token(false) },
+    callKey(conversationId, callId, fresh) {
+      const room = rooms.get(conversationId);
+      return room === undefined ? Promise.reject(new Error('NO_SUCH_CHAT')) : room.callKey(callId, fresh);
+    },
     stop() {
       stopped = true;
       if (timer !== undefined) clearTimeout(timer);

@@ -23,7 +23,7 @@ import type { FastifyInstance } from 'fastify';
 import { SignJWT } from 'jose';
 import { afterAll, beforeAll, beforeEach, describe, expect, inject } from 'vitest';
 import { createDatabase, type Database, type DatabaseTimeouts } from '../../db.js';
-import { buildServer } from '../../server.js';
+import { type BuildServerOptions, buildServer } from '../../server.js';
 import { tokenKeyId, tokenKeyringOf } from '../../token-keys.js';
 import { assertThrowawayDatabaseName, databaseNameOf } from './test-database.js';
 
@@ -557,6 +557,8 @@ export function unusedDatabase(): Database {
 export interface HarnessOptions {
   /** Database timeouts for this harness (a suite about ROOM_BUSY shortens the lock timeout). */
   readonly timeouts?: Partial<DatabaseTimeouts>;
+  /** Server options a suite turns on (the call channel and its stream timings, ADR-228; the allowed origins). */
+  readonly server?: Pick<BuildServerOptions, 'callsEnabled' | 'callStreamTimings' | 'allowedOrigins'>;
 }
 
 export async function startHarness(
@@ -579,6 +581,7 @@ export async function startHarness(
       tokenExpectations: TEST_TOKEN_EXPECTATIONS,
       operatorUserId: OPERATOR,
       now: clock.now,
+      ...options.server,
     });
     await built.ready();
     return built;

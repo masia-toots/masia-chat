@@ -49,7 +49,8 @@ with test counts and dates, is [`packages/messenger/docs/context.md`](packages/m
 
 **Works today**
 
-- The playground: an end-to-end encrypted chat (MLS, RFC 9420) between two tabs, through a relay on your machine.
+- The playground: an end-to-end encrypted chat (MLS, RFC 9420) between two tabs, through a relay on your machine,
+  and a one-to-one audio call between them whose media keys are bound to the chat's MLS group.
 - The relay keeps ciphertext, public keys and routing metadata. Its schema has no column for message text, and
   it drops envelopes and handshakes after 30 days.
 - The client: replies, edits, @-mentions, and a "not sent" line with Retry and Delete that survives a reload.
@@ -66,15 +67,18 @@ with test counts and dates, is [`packages/messenger/docs/context.md`](packages/m
 - The room runtime (sessions, enrolment, commits, one writer per room) is not in the package. `createMessenger`
   holds the ports and nothing more, so the playground carries its own runtime.
 - There is no screen or flow here for adding a device or moving the identity key, and no run on a real phone yet.
-- The relay is a mailbox over HTTP: clients poll, and there is no push channel. Deployment, TLS and backups are
+- The relay is a mailbox over HTTP: clients poll for messages, and there is no push channel (only call signals
+  have a live stream, and only when the call channel is switched on). Deployment, TLS and backups are
   yours to decide. The relay checks tokens; minting them is the host's job.
 - Pictures and files do not go through the encrypted path yet.
-- Calls are here only in part. The one-to-one audio call engine, its state machine and its wire contract are
-  in this repository: `@masia/messenger/call` and `@masia/contracts/wire`
-  ([how a host plugs in](packages/messenger/docs/calls.md)). Signalling and TURN credentials are not: a host
-  provides them through the engine's ports. The machine, SDP and wire tests are here; the engine's own test
-  suites still run in the first host. The playground has no call yet, and there is no call screen
-  here. Both are the next step.
+- Calls are here only in part. The one-to-one audio call engine, its state machine, its wire contract, its
+  binding to the chat's MLS group and its call screen are in this repository: `@masia/messenger/call`,
+  `@masia/messenger/call/react` and `@masia/contracts/wire`
+  ([how a host plugs in](packages/messenger/docs/calls.md)). The relay can carry call signals over an opt-in
+  channel (off unless `RELAY_CALLS_ENABLED=true`; for loopback or a trusted LAN, with none of a host's rules), and
+  the playground's two tabs on one machine call each other over it
+  ([`demo/README.md`](demo/README.md#call-the-other-tab)). TURN credentials are not here: a host provides its ICE
+  servers through the engine's ports.
 - `ts-mls` is young and has one maintainer, and neither it nor this code has had an outside security audit.
   The open design questions (who signs a minor's device list, how people verify each other, what a message is
   bound to, how much to trust a web device) are listed in `context.md`.

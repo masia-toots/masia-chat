@@ -1,0 +1,168 @@
+/* The full-screen frame the messenger's call screen stands on (the package's `docs/calls.md`, "What the host's
+   stylesheet provides"). The package's own `audio-call.css` draws the call's parts (the initial, the timer, the
+   badge, the red button, the folded pill) and reads the classes and custom properties below.
+
+   The screen is the same in a light and a dark page: a near-black sheet with ivory ink, so the red and green
+   buttons keep their contrast whatever the page's scheme. Sizes are relations (a viewport share clamped between
+   two text sizes); touch targets stay at or above 44 px. Motion stops under reduced motion. */
+
+/* The layer: fixed over the whole page, and it takes no clicks itself (only the screen inside it does), so a
+   folded call leaves the page under it usable. */
+.demo-call-layer {
+  position: fixed;
+  inset: 0;
+  /* above everything the page opens: Mantine's modals, popovers and menus sit at a few hundred */
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.esc {
+  --esc-ink: #f4f7ef;
+  --esc-dim: rgba(234, 246, 249, 0.68);
+  --esc-accent: #85d7e6;
+  --esc-line: rgba(234, 246, 249, 0.18);
+  --esc-card: rgba(234, 246, 249, 0.07);
+  --esc-gap: clamp(0.75rem, 2.6vmin, 1.5rem);
+  --esc-ceiling: env(safe-area-inset-top, 0px);
+  --esc-floor: env(safe-area-inset-bottom, 0px);
+  /* The red of «Hang up» and «Decline». The package reads Mantine's deepest red; the frame names it itself so the
+     screen does not depend on which variables a theme happens to define. Ivory on it is above 4.5:1. */
+  --mantine-color-red-9: #c92a2a;
+  --esc-answer-top: #3fd08f;
+  --esc-answer-bottom: #21a86c;
+  --esc-answer-ink: #04120c;
+
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-inline: clamp(1.25rem, 6vmin, 4rem);
+  padding-block: calc(clamp(1rem, 4vmin, 2.5rem) + var(--esc-ceiling)) calc(clamp(1rem, 4vmin, 2.5rem) + var(--esc-floor));
+  /* a long problem sentence on a short landscape phone scrolls inside the screen */
+  overflow-y: auto;
+  color: var(--esc-ink);
+  text-align: center;
+  font-family: inherit;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(133, 215, 230, 0.16), transparent 60%),
+    /* opaque: the page's own words must not show through under the fold button */
+    rgb(6, 12, 18);
+  animation: esc-in 200ms ease-out both;
+}
+
+@keyframes esc-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.esc__body {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esc-gap);
+}
+
+/* The initial leans in while it rings (the package uses these keyframes, one beat every 3 s). */
+@keyframes esc-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+/* The stage word above the name. */
+.esc__caller {
+  margin: 0;
+  font-size: clamp(0.75rem, 2.2vmin, 0.95rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--esc-dim);
+}
+
+.esc__answers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(0.5rem, 2vmin, 1rem);
+  margin-block-start: clamp(0.5rem, 2vmin, 1rem);
+}
+
+.esc__btn {
+  min-width: 8rem;
+  min-height: 3rem; /* above the 44 px touch minimum, in text units */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: clamp(0.6rem, 2.2vmin, 1rem) clamp(1rem, 3vmin, 1.75rem);
+  appearance: none;
+  border: 1px solid transparent; /* hairline: lets --snooze and --quiet draw an edge with the same box */
+  border-radius: 999px;
+  color: var(--esc-ink);
+  font: inherit;
+  font-size: clamp(0.95rem, 2.6vmin, 1.15rem);
+  font-weight: 600;
+  cursor: pointer;
+}
+.esc__btn:active {
+  transform: scale(0.97);
+}
+/* «Answer» */
+.esc__btn--done {
+  background: linear-gradient(180deg, var(--esc-answer-top), var(--esc-answer-bottom));
+  color: var(--esc-answer-ink);
+}
+/* «Mute» */
+.esc__btn--snooze {
+  background: rgba(234, 246, 249, 0.08);
+  border-color: var(--esc-line);
+}
+/* «Close» */
+.esc__btn--quiet {
+  background: none;
+  border-color: var(--esc-line);
+  color: var(--esc-dim);
+}
+
+/* The closing sentence of an ended call. */
+.esc__closing {
+  margin: 0;
+  font-size: clamp(1.05rem, 3.2vmin, 1.4rem);
+  color: var(--esc-ink);
+}
+
+/* «Turn the sound on»: a text button. */
+.esc__silent {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0.5rem 1rem;
+  color: var(--esc-accent);
+  font: inherit;
+  font-size: clamp(0.85rem, 2.2vmin, 1rem);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.esc__hint {
+  margin: 0;
+  font-size: clamp(0.8rem, 2.2vmin, 0.95rem);
+  color: var(--esc-dim);
+}
+
+/* The ended screen: nothing moves any more. */
+.esc--settled {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esc,
+  .esc__btn:active {
+    animation: none;
+    transform: none;
+  }
+}

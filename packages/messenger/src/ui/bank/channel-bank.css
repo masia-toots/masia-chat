@@ -40,8 +40,9 @@
 
 /* ── ANOTHER FAMILY'S PEOPLE (polishing П16, founder 2026-11-08, variant Г) ─────────────────────────────────────────
    Behind the current family's chips each OTHER family's people sit in a group — `.chbank__family` (role="group", named for a
-   screen reader) — that opens with a DELIMITER: a thin amber vertical tick and a tiny caps header («ІНША РОДИНА» over the
-   family's name). The chips themselves wear NO badge. The delimiter is not a control (aria-hidden, no pointer events) and
+   screen reader) — that opens with a DELIMITER: a thin amber vertical tick and the family's name beside it (founder
+   2026-11-22: «тільки назва»; the tiny caps «ІНША РОДИНА» kicker shows only for a family the host could not name). The
+   chips themselves wear NO badge. The delimiter is not a control (aria-hidden, no pointer events) and
    is the group's own first child, so the strip's scroll/window can never part it from the chip it introduces. The tick is the
    package's caution amber (`--msg-warn`, the one «look here, not an error» colour), never a new hex. */
 .chbank__family {

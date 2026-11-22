@@ -15,6 +15,9 @@
     "./mls": "./src/mls/index.ts",
     "./call": "./src/call/index.ts",
     "./call/audio-call-machine": "./src/call/audio-call-machine.ts",
+    "./call/call-binding": "./src/call/call-binding.ts",
+    "./call/react": "./src/call/react/index.ts",
+    "./call/browser-speaker": "./src/call/browser-speaker.ts",
     "./state-machine": "./src/state-machine/create-machine.ts",
     "./bundler/optional-peers": "./bundler/optional-peers.mjs"
   },

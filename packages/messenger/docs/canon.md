@@ -483,9 +483,19 @@ The relay sees **who talks to whom and when**, never what. We say that plainly.
   from "never a member".
 - The relay accepts only commits and Welcomes. A standalone proposal is refused
   (`HANDSHAKE_KIND_UNSUPPORTED`): the engine never sends one and never accepts one.
-- The relay never holds a request open: database calls have a connection, statement, lock and
-  idle-in-transaction timeout, and a request that waits too long for a busy room's lock is answered 503
-  `ROOM_BUSY` with `Retry-After`.
+- The relay never holds a request open (the one exception, off by default, is the call stream below): database
+  calls have a connection, statement, lock and idle-in-transaction timeout, and a request that waits too long for
+  a busy room's lock is answered 503 `ROOM_BUSY` with `Retry-After`.
+- **Call signals pass through, unstored, and only when the operator turns them on (since 2026-11-22).** With
+  `RELAY_CALLS_ENABLED=true` the relay holds one event stream per device and hands each posted call signal to
+  the target device's stream at once; nothing is written, a signal for a device with no stream is gone, and a
+  post is answered the same way whether the target listens or not. Only between the `USER` devices of the two
+  people of a one-to-one room, and, but for a ring, only between the two devices of a call a ring admitted; the
+  relay names the sender from its own records. While it passes a signal the
+  relay **sees who calls whom and when, both devices' addresses and every SDP**; it never hears the call (the
+  audio is peer to peer and the engine binds it to the room's MLS secret). It applies none of a host's rules
+  (blocks, quiet hours, child protection) and offers no TURN, so it is meant for loopback or a trusted LAN.
+  How a client uses it: [`calls.md`](calls.md#signalling-through-the-relay).
 - Pushes for encrypted rooms are **generic**: they say "something new in room X" and never carry text or a
   sender name; the device fetches and decrypts locally.
 - Handing out key packages is limited to accepted contacts and rate-limited per requester. Otherwise an

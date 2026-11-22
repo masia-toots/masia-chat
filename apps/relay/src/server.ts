@@ -1,5 +1,6 @@
 import swagger from '@fastify/swagger';
 import {
+  createCallChannel,
   MAX_ADMIN_OF_USERS,
   RELAY_HEALTH_PATH,
   RELAY_PROTOCOL_VERSION,
@@ -15,6 +16,7 @@ import { createIdentityRequestDirectory } from './domain/identity-requests.js';
 import { createKeyPackageDirectory } from './domain/key-packages.js';
 import { createEpochSerializer } from './epoch-serializer.js';
 import { installErrorHandler } from './error-handler.js';
+import { type CallStreamTimings, DEFAULT_CALL_STREAM_TIMINGS, registerCallRoutes } from './routes/calls.js';
 import { registerConversationRoutes } from './routes/conversations.js';
 import { registerDeviceListRoutes } from './routes/device-lists.js';
 import { registerDeviceRoutes } from './routes/devices.js';
@@ -45,8 +47,8 @@ const SECONDS_PER_MINUTE = 60;
 const API_VERSION = `${RELAY_PROTOCOL_VERSION}.0.0`;
 
 export interface BuildServerOptions {
-  /** Request logging; on for the real process, off in tests. */
-  readonly logger?: boolean;
+  /** Request logging; on for the real process, off in tests (or into a stream a test reads). */
+  readonly logger?: boolean | { readonly stream: { write(line: string): void } };
   /** The relay's own database. The caller owns it and closes it. */
   readonly database: Database;
   /** The public keys access tokens are verified with (the host API signs them with the private half). */
@@ -71,6 +73,13 @@ export interface BuildServerOptions {
    * `resolveRelayAllowedOrigins`, cors.ts). Absent or empty: same-origin clients only.
    */
   readonly allowedOrigins?: readonly string[];
+  /**
+   * The call channel (config.ts `resolveRelayCallsEnabled`, routes/calls.ts, ADR-228). Absent or false: its routes
+   * are not registered.
+   */
+  readonly callsEnabled?: boolean;
+  /** The call stream's keep-alive and device re-check intervals; tests shorten them. */
+  readonly callStreamTimings?: Partial<CallStreamTimings>;
 }
 
 /** Builds the relay process's Fastify app. Does not listen, so tests can `inject` into it. */
@@ -89,6 +98,7 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
   const expect = options.tokenExpectations;
   const basePath = options.basePath ?? '';
   app.decorateRequest('principal', null);
+  app.decorateRequest('tokenExpiresAtMs', null);
   installErrorHandler(app);
 
   // Registered before the routes: the OpenAPI document is built from the routes added after it.
@@ -150,6 +160,7 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
     identityRequests: createIdentityRequestDirectory(options.database, { now }),
     operatorUserId,
     now,
+    calls: createCallChannel({ now }),
   };
 
   // On the root scope, before the routes: a preflight to any path is answered here (cors.ts).
@@ -183,6 +194,9 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
       registerIdentityRequestRoutes(scope, deps);
       registerKeyPackageRoutes(scope, deps);
       registerConversationRoutes(scope, deps);
+      if (options.callsEnabled === true) {
+        registerCallRoutes(scope, deps, { ...DEFAULT_CALL_STREAM_TIMINGS, ...options.callStreamTimings });
+      }
     },
     { prefix: basePath },
   );

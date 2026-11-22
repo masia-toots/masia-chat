@@ -23,6 +23,7 @@ export const RELAY_ERROR_STATUS: Readonly<Record<RelayErrorCode, number>> = {
   DEVICE_OWNED_BY_OTHER: 403,
   NOT_A_CONTACT: 403,
   NOT_A_HOLDER: 403,
+  CALL_NOT_ALLOWED: 403,
   DEVICE_LIST_NOT_FOUND: 404,
   NOT_FOUND: 404,
   EPOCH_CONFLICT: 409,
@@ -62,6 +63,7 @@ export const RELAY_ERROR_STATUS: Readonly<Record<RelayErrorCode, number>> = {
   TARGET_RATE_LIMITED: 429,
   INTERNAL: 500,
   ROOM_BUSY: 503,
+  CALL_STREAMS_FULL: 503,
 };
 
 /**
@@ -155,6 +157,19 @@ export class RateLimitedError extends RelayError {
   ) {
     super(code, message, { [RETRY_AFTER_DETAIL]: retryAfter });
     this.name = 'RateLimitedError';
+    this.retryAfterSeconds = retryAfter;
+  }
+}
+
+/** A 503: the relay holds as many open call streams as it takes. `retryAfterSeconds` as on a 429. */
+export class CallStreamsFullError extends RelayError {
+  readonly retryAfterSeconds: number;
+
+  constructor(retryAfter: number) {
+    super(RelayErrorCode.CALL_STREAMS_FULL, 'The relay holds as many call streams as it takes; try again later.', {
+      [RETRY_AFTER_DETAIL]: retryAfter,
+    });
+    this.name = 'CallStreamsFullError';
     this.retryAfterSeconds = retryAfter;
   }
 }

@@ -9,6 +9,10 @@
  *   strips from one (non-relay candidates on a relay-only call).
  * - `browser-ports.ts` — the generic browser ports: the peer connection, the microphone, the request id.
  * - `call-binding-types.ts` — the binding port's types; the host's MLS worker implements the port.
+ * - `call-binding.ts` — the binding itself (`callTag` / `callVerify`), for the host to run inside its MLS worker over a
+ *   keyring of its room; `K` never leaves it. A worker imports it through `@masia/messenger/call/call-binding`.
+ * - `relay-socket.ts` — the socket port over an open relay's call channel (`createRelayCallSocket`): one event
+ *   stream and one POST per signal, the caller and the callee doing what a call server would (internal ADR-228).
  *
  * The wire contract (`call:*` events, limits, validation) and the fingerprint tag are in `@masia/contracts/wire`.
  * Nothing here imports a UI framework: the engine runs headless in Node tests and in a browser.
@@ -18,3 +22,5 @@ export * from './audio-call-machine.js';
 export * from './sdp.js';
 export * from './browser-ports.js';
 export * from './call-binding-types.js';
+export * from './call-binding.js';
+export * from './relay-socket.js';

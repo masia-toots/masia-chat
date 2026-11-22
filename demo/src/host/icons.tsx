@@ -3,11 +3,15 @@ import type { IconSet, MessengerIconName } from '@masia/contracts';
 
 // The playground's icons: 28 small line drawings made for this page out of plain shapes (lines, arcs,
 // rectangles, circles) on a 24 by 24 grid. They are drawn here, not taken from an icon library, so
-// the playground carries no third-party artwork and no licence besides its own.
+// the playground carries no third-party artwork and no licence besides its own. The call screen's
+// icons (`call-icons.tsx`) are drawn the same way and share the frame below.
 
 const DOT = 0.9;
+/** The grid every glyph is drawn on, and its centre (the point a glyph turns around). */
+const GRID = 24;
+const CENTRE = GRID / 2;
 
-const GLYPHS: Readonly<Record<MessengerIconName, ReactNode>> = {
+export const MESSENGER_GLYPHS: Readonly<Record<MessengerIconName, ReactNode>> = {
   send: (
     <>
       <path d="M4 12 L20 4 L13 20 L11 13 Z" />
@@ -158,27 +162,35 @@ const GLYPHS: Readonly<Record<MessengerIconName, ReactNode>> = {
   ),
 };
 
+/** One glyph in the shared line frame: decorative (the button around it carries the name), turned when asked. */
+export function lineIcon(
+  glyph: ReactNode,
+  size: number | string,
+  options: { readonly className?: string; readonly turnDegrees?: number } = {},
+): ReactNode {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${GRID} ${GRID}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      className={options.className}
+    >
+      {options.turnDegrees === undefined ? glyph : <g transform={`rotate(${options.turnDegrees} ${CENTRE} ${CENTRE})`}>{glyph}</g>}
+    </svg>
+  );
+}
+
 export function createIconSet(): IconSet {
   return {
     render(name, size, className) {
-      const side = size ?? '1em';
-      return (
-        <svg
-          width={side}
-          height={side}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          focusable="false"
-          className={className}
-        >
-          {GLYPHS[name]}
-        </svg>
-      );
+      return lineIcon(MESSENGER_GLYPHS[name], size ?? '1em', { className });
     },
   };
 }

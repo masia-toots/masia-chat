@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { RELAY_PREFIX } from '../shared/paths.js';
-import { PROXY_BODY_MAX_BYTES, ProxyRefusal, proxyToRelay, relayTarget } from './proxy.js';
+import {
+  EVENT_STREAM_TYPE,
+  PROXY_BODY_MAX_BYTES,
+  ProxyRefusal,
+  proxyToRelay,
+  relayTarget,
+  STREAM_HEADERS,
+} from './proxy.js';
 import { listen, type Listening } from './test-kit.js';
 
 const RELAY = new URL('http://relay.internal:3400');
@@ -160,6 +167,55 @@ describe('proxyToRelay', () => {
     const text = await answer.text();
     expect(text).not.toContain('ECONNREFUSED');
     expect(text).not.toContain('10.1.2.3');
+  });
+
+  it('passes a live event stream on as the relay writes it, unbuffered, and lets go of it when the browser leaves', async () => {
+    const encoder = new TextEncoder();
+    let push: (text: string) => void = () => undefined;
+    let cancelled!: () => void;
+    const gone = new Promise<void>((resolve) => (cancelled = resolve));
+    door = await listen((request, response) => {
+      void proxyToRelay(request, response, RELAY, async (_input, init) => {
+        init?.signal?.addEventListener('abort', () => cancelled());
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            push = (text) => controller.enqueue(encoder.encode(text));
+          },
+          cancel: () => cancelled(),
+        });
+        return new Response(body, { status: 200, headers: { 'content-type': `${EVENT_STREAM_TYPE}; charset=utf-8` } });
+      });
+    });
+
+    const controller = new AbortController();
+    const answer = await fetch(`${door.origin}${RELAY_PREFIX}/calls/stream`, {
+      headers: { authorization: 'Bearer t0k', accept: EVENT_STREAM_TYPE },
+      signal: controller.signal,
+    });
+    // The headers came before any event: the stream is open, not waiting to be read whole.
+    expect(answer.status).toBe(200);
+    expect(answer.headers.get('content-type')).toBe(`${EVENT_STREAM_TYPE}; charset=utf-8`);
+    expect(answer.headers.get('content-length')).toBeNull();
+    expect(answer.headers.get('cache-control')).toBe(STREAM_HEADERS['cache-control']);
+    expect(answer.headers.get('x-accel-buffering')).toBe(STREAM_HEADERS['x-accel-buffering']);
+
+    const reader = (answer.body as ReadableStream<Uint8Array>).getReader();
+    const decoder = new TextDecoder();
+    const first = 'event: ready\ndata: {"closesInMs":60000}\n\n';
+    push(first);
+    let seen = '';
+    while (seen.length < first.length) {
+      const chunk = await reader.read();
+      if (chunk.done) throw new Error('the stream ended before its first event');
+      seen += decoder.decode(chunk.value, { stream: true });
+    }
+    // The first event arrived while the relay's stream is still open.
+    expect(seen).toBe(first);
+
+    // The browser leaves: the door cancels the relay's stream (or aborts its request) instead of holding it open.
+    controller.abort();
+    await reader.cancel().catch(() => undefined);
+    await gone;
   });
 
   it('does not follow a redirect the relay sends', async () => {

@@ -193,6 +193,27 @@ export function resolveRelayAllowedOrigins(env: NodeJS.ProcessEnv = process.env)
 }
 
 /**
+ * Turns the call channel on (`routes/calls.ts`, ADR-228): instant, never stored call signalling between the two USER
+ * devices of a one-to-one room. OFF unless set: the channel shows the operator who calls whom and when, both
+ * devices' addresses and every SDP, and it has none of a host's protections (blocks, quiet hours, child rules). Meant
+ * for loopback or a trusted LAN. Off, its routes are not registered at all (an unknown route's 404).
+ */
+export const RELAY_CALLS_ENABLED_ENV = 'RELAY_CALLS_ENABLED';
+
+const ON_VALUES: ReadonlySet<string> = new Set(['1', 'true']);
+const OFF_VALUES: ReadonlySet<string> = new Set(['0', 'false']);
+
+/** Reads the call-channel switch: `1`/`true` on; unset, empty, `0`/`false` off. Anything else throws. */
+export function resolveRelayCallsEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const raw = env[RELAY_CALLS_ENABLED_ENV];
+  if (raw === undefined || raw.trim() === '') return false;
+  const value = raw.trim().toLowerCase();
+  if (ON_VALUES.has(value)) return true;
+  if (OFF_VALUES.has(value)) return false;
+  throw new Error(`${RELAY_CALLS_ENABLED_ENV} must be "1" or "true" (on), "0" or "false" (off), got "${raw}"`);
+}
+
+/**
  * The relay database URL. In production the variable is REQUIRED: falling back to the development
  * default there would point a live relay at whatever answers on localhost.
  */

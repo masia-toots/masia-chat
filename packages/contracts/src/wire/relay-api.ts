@@ -45,6 +45,11 @@ export const RelayErrorCode = {
    * not an unrevoked listed USER device of the account with a valid holder proof (ADR-218 §2, §5).
    */
   NOT_A_HOLDER: 'NOT_A_HOLDER',
+  /**
+   * The call channel (`call-relay.ts`) takes only a USER device, in a room whose current members are
+   * USER devices of exactly two people, signalling a USER device of the OTHER person in that room.
+   */
+  CALL_NOT_ALLOWED: 'CALL_NOT_ALLOWED',
   // 404
   DEVICE_LIST_NOT_FOUND: 'DEVICE_LIST_NOT_FOUND',
   NOT_FOUND: 'NOT_FOUND',
@@ -129,6 +134,8 @@ export const RelayErrorCode = {
   INTERNAL: 'INTERNAL',
   /** The room's row stayed locked past the lock timeout; retry after `Retry-After`. */
   ROOM_BUSY: 'ROOM_BUSY',
+  /** The relay holds as many open call streams as it takes (per person or in all); retry after `Retry-After`. */
+  CALL_STREAMS_FULL: 'CALL_STREAMS_FULL',
 } as const;
 export type RelayErrorCode = (typeof RelayErrorCode)[keyof typeof RelayErrorCode];
 

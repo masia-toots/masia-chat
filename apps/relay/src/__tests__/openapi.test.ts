@@ -19,10 +19,12 @@ describe('the OpenAPI document', () => {
   let document: { paths: Paths };
 
   beforeAll(async () => {
+    // As the export script builds it: the call channel on, so its routes are in the document.
     const app = await buildServer({
       database,
       tokenKeys: TEST_TOKEN_KEYS,
       tokenExpectations: TEST_TOKEN_EXPECTATIONS,
+      callsEnabled: true,
     });
     await app.ready();
     document = JSON.parse(JSON.stringify(app.swagger())) as { paths: Paths };
@@ -71,6 +73,9 @@ describe('the OpenAPI document', () => {
         'POST /users/me/identity-requests/{id}/reveal',
         'POST /users/me/identity-requests/{id}/approve',
         'POST /users/me/identity-requests/{id}/reject',
+        // ADR-228: the call channel (registered only with RELAY_CALLS_ENABLED).
+        'GET /calls/stream',
+        'POST /calls/signal',
       ]),
     );
   });
@@ -133,6 +138,7 @@ describe('the OpenAPI document of a relay served under a base path', () => {
       tokenKeys: TEST_TOKEN_KEYS,
       tokenExpectations: TEST_TOKEN_EXPECTATIONS,
       basePath: '/relay',
+      callsEnabled: true,
     });
     try {
       await app.ready();

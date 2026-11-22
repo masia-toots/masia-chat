@@ -1,0 +1,264 @@
+/* ── THE PERSON-TO-PERSON CALL ────────────────────────────────────────────────────────────────────────────────────
+   Built ON the host's full-screen dialog frame (`docs/calls.md` § The call screen: `.esc`, `.esc__body`, the kicker,
+   the pill buttons, the closing line, the `--esc-*` palette) — this file adds only what a call between two people
+   has: a person's initial, the timer, the badge of who else could listen, the red button, the fold button and the
+   folded pill. Every size is a relation (clamp of a viewport unit between two text units), like the frame it builds
+   on; targets are ≥ 44 px; motion stops under reduced motion. The palette is the frame's own and does not read the
+   colour scheme: a light or a dark page shows the same screen — no scheme selector here, and of Mantine only palette
+   shades (one value in both schemes). */
+
+.acall,
+.acall-pill {
+  /* a warning that is not an error colour shouting: warm, readable on the near-black screen */
+  --acall-alert: #ffbfa8;
+  /* the red of «hang up» and «decline» is the theme's own deepest red, under the screen's ivory ink: 4.9:1 at its
+     lightest (a 15 px label needs 4.5:1). The gradient only darkens it toward the bottom, so no stop is lighter than
+     the token. */
+  --acall-end: var(--mantine-color-red-9);
+  --acall-end-ink: var(--esc-ink);
+  --acall-end-shade: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.22));
+  --acall-face: clamp(5.5rem, 22vmin, 9rem);
+}
+
+/* ── the initial ─────────────────────────────────────────────────────────────── */
+.acall__face {
+  flex: 0 0 auto;
+  width: var(--acall-face, 2.75rem);
+  height: var(--acall-face, 2.75rem);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--esc-line); /* hairline — named exception */
+  background: var(--esc-card);
+  color: var(--esc-ink);
+  font-size: calc(var(--acall-face, 2.75rem) * 0.42);
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 0 clamp(0.75rem, 3vmin, 2rem) rgba(133, 215, 230, 0.25);
+}
+/* the ring leans in on the ringtone's own 3 s cadence — the frame's keyframes, one beat */
+.acall__face--ringing {
+  animation: esc-pulse 3s ease-in-out infinite;
+}
+
+/* ── the name, the marks under it ────────────────────────────────────────────── */
+.acall__name {
+  margin: 0;
+  max-width: 100%;
+  font-size: clamp(1.5rem, 5.5vmin, 2.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  /* one line: a long name ends in «…», the whole of it is in `title` and in the dialog's name */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acall__verified {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: clamp(0.8rem, 2.2vmin, 0.95rem);
+  color: var(--esc-dim);
+}
+.acall__time {
+  margin: 0;
+  font-size: clamp(1.05rem, 3.2vmin, 1.4rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--esc-accent);
+}
+.acall__problem {
+  margin: 0;
+  max-width: 40ch;
+  font-size: clamp(0.95rem, 2.6vmin, 1.1rem);
+  line-height: 1.4;
+  color: var(--acall-alert);
+}
+/* «Turn the sound on» is the frame's quiet text button; here it is the one way to hear the other person, so
+   it gets the full 44 px target (the borrowed padding gives ~41 px at desktop sizes). Why it is there, under it. */
+.acall .esc__silent {
+  min-height: 2.75rem;
+}
+.acall__held {
+  margin: 0;
+  font-size: clamp(0.8rem, 2.2vmin, 0.95rem);
+  color: var(--esc-dim);
+}
+
+/* ── who else could listen — the frame's card, text-start ───────────────────────────────────────────────────── */
+/* Its live region is always there (a region that appears with its words is not announced); empty, it takes no room —
+   its zero height would still cost the column one gap, which the negative margin gives back. */
+.acall__others-live {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.acall__others-live:empty {
+  margin-block-start: calc(-1 * var(--esc-gap));
+}
+.acall__others {
+  width: min(100%, 44ch);
+  box-sizing: border-box;
+  padding: clamp(0.6rem, 2vmin, 1rem) clamp(0.85rem, 2.6vmin, 1.25rem);
+  border: 1px solid var(--esc-line); /* hairline — named exception */
+  border-radius: clamp(0.75rem, 2vmin, 1.25rem);
+  background: var(--esc-card);
+  text-align: start;
+  font-size: clamp(0.85rem, 2.3vmin, 1rem);
+  line-height: 1.4;
+}
+.acall__others-title {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  color: var(--esc-dim);
+}
+.acall__others-title > svg {
+  flex: 0 0 auto;
+  margin-top: 0.15em;
+}
+.acall__others-list {
+  margin: 0.35em 0 0;
+  padding-inline-start: 1.9em;
+  overflow-wrap: anywhere;
+}
+
+/* ── the buttons ─────────────────────────────────────────────────────────────── */
+.acall__btn--end {
+  background: var(--acall-end-shade), var(--acall-end);
+  color: var(--acall-end-ink);
+}
+.acall__btn--on {
+  border-color: var(--esc-accent);
+  color: var(--esc-accent);
+}
+.esc__btn:focus-visible,
+.acall__fold:focus-visible,
+.acall-pill__open:focus-visible,
+.acall-pill__btn:focus-visible {
+  outline: 2px solid var(--esc-accent);
+  outline-offset: 3px;
+}
+/* The dialog itself holds focus on a ring and a call (no button a stray key would press); it is not a control, so it
+   draws no ring of its own — Tab moves on to the buttons, which do. */
+.acall:focus {
+  outline: none;
+}
+.esc__btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* fold — top start, clear of the notch (the screen's own ceiling) */
+.acall__fold {
+  position: absolute;
+  top: calc(var(--esc-ceiling) + clamp(0.5rem, 2vmin, 1rem));
+  inset-inline-start: clamp(0.5rem, 2vmin, 1rem);
+  width: 2.75rem; /* 44 px at 16 px — the platform minimum */
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  appearance: none;
+  border: 1px solid var(--esc-line); /* hairline — named exception */
+  border-radius: 50%;
+  background: none;
+  color: var(--esc-dim);
+  cursor: pointer;
+}
+
+/* ── folded: a pill at the top, the page under it stays usable ───────────────────────────────────────────────────
+   `.esc` fills the layer; the pill takes the same palette and undoes the fill: a top-anchored capsule (bottom `auto`
+   — never pin both edges of a one-edge container), only the capsule eats taps. */
+.esc.acall-pill {
+  --acall-face: 2.25rem;
+  inset: calc(var(--esc-ceiling) + 0.5rem) auto auto 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  height: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  overflow: visible;
+  border: 1px solid var(--esc-line); /* hairline — named exception */
+  border-radius: 999px;
+  background: rgba(6, 12, 18, 0.94);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.45);
+  text-align: start;
+  animation: acall-pill-in 180ms ease-out both;
+}
+@keyframes acall-pill-in {
+  from { opacity: 0; transform: translate(-50%, -0.5rem); }
+  to { opacity: 1; transform: translateX(-50%); }
+}
+.acall-pill__open {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.75rem 0 0.15rem;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--esc-ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.acall-pill__words {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.acall-pill__name {
+  max-width: 14rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acall-pill__state {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--esc-accent);
+  /* a stage word may be long («Connection lost, reconnecting…»): on a phone it wraps inside the capsule rather than
+     push it past the screen's edge — the time itself is short */
+  overflow-wrap: break-word;
+}
+.acall-pill__btn {
+  flex: 0 0 auto;
+  width: 2.75rem; /* 44 px */
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  appearance: none;
+  border: 1px solid var(--esc-line); /* hairline — named exception */
+  border-radius: 50%;
+  background: rgba(234, 246, 249, 0.06);
+  color: var(--esc-ink);
+  cursor: pointer;
+}
+.acall-pill__btn--on {
+  border-color: var(--esc-accent);
+  color: var(--esc-accent);
+}
+.acall-pill__btn--end {
+  border-color: transparent;
+  background: var(--acall-end-shade), var(--acall-end);
+  color: var(--acall-end-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acall__face--ringing,
+  .esc.acall-pill {
+    animation: none;
+  }
+}

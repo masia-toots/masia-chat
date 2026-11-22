@@ -149,6 +149,31 @@ body {
   line-height: 1;
   cursor: pointer;
 }
+/* «Call»: a pill with a 44 px touch target; the reason it cannot be pressed sits beside it. */
+.demo-chat__call {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2.75rem;
+  padding: 0 14px;
+  border: 1px solid var(--demo-frosted-border);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.demo-chat__call:hover:not(:disabled) { background: rgba(var(--demo-accent-rgb), 0.12); }
+.demo-chat__call:focus-visible { outline: 2px solid var(--demo-accent); outline-offset: 2px; }
+.demo-chat__call:disabled { opacity: 0.55; cursor: default; }
+.demo-chat__call-hint {
+  max-width: 16rem;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: right;
+  opacity: 0.75;
+}
 .demo-chat__status {
   margin: 0;
   padding: 6px 14px;

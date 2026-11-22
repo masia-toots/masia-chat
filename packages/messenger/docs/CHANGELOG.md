@@ -10,6 +10,11 @@ For the **why** behind each change, and the order things happened in, read [`log
 
 ### Added
 
+- `call/relay-socket.ts`: `createRelayCallSocket(options)`, the call engine's socket port over the relay's call
+  channel (`RelayCallSocket`, `RelayCallSocketOptions`, `RelayFetch`, `RelayFetchResponse`,
+  `RelayCallSocketStatus`, `RELAY_SOCKET_CLOSE`). The relay's channel (`GET /calls/stream`, `POST /calls/signal`)
+  is off unless `RELAY_CALLS_ENABLED=true`; see [`calls.md`](calls.md#signalling-through-the-relay). It caps
+  a relay's `Retry-After` at `reconnectMaxMs` and a stream's `closesInMs` at the longest a token lives.
 - `hooks/outbox-rules.ts`: the outbox rules written once (`settleOutboxEntries`, `failWaitingEntries`,
   `weaveOutboxRows`, `OutboxHistoryRules`, `OutboxRowEntry`), exported so a host's own outbox follows them in the
   same store; the plaintext outbox now calls them. `UnsentRow` (the "not sent" strip with Retry and Delete),

@@ -1,4 +1,5 @@
-# The playground: an end-to-end encrypted chat between two browser tabs, through a relay on your machine.
+# The playground: an end-to-end encrypted chat, and a one-to-one audio call, between two browser tabs, through a
+# relay on your machine.
 #
 #   docker compose up --build        (run it in this directory)
 #   then open http://localhost:8080 in two tabs and join with two different names.
@@ -12,7 +13,8 @@
 # DEMO ONLY. Everything below that looks like a security shortcut is one, on purpose:
 #   - the web service hands a relay token to anyone who types a name (there are no accounts);
 #   - the database accepts connections from the compose network without a password and keeps nothing on disk;
-#   - the images run TypeScript through tsx and are pinned by tag, not by digest.
+#   - the images run TypeScript through tsx and are pinned by tag, not by digest;
+#   - the relay's call channel is on, so the relay sees who calls whom, both tabs' addresses and every SDP.
 # None of it belongs in a deployment. `docker compose down -v` removes the keys and the database.
 
 name: masia-playground
@@ -66,6 +68,9 @@ services:
       NODE_ENV: production
       RELAY_DATABASE_URL: postgresql://relay@relay-db:5432/relay
       DEMO_TOKEN_PUBLIC_KEY_FILE: /keys/token-public.b64
+      # The call channel the two tabs call each other through (off unless set; "true" or "1" switch it on). It is
+      # for loopback or a trusted LAN only, like everything else here.
+      RELAY_CALLS_ENABLED: "true"
     volumes:
       - keys:/keys:ro
     healthcheck:

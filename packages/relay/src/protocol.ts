@@ -8,6 +8,8 @@
  * (`index.ts`). Until 2026-10-10 it lived here and the engine kept copies (review round 1, M14).
  */
 
+import { MAX_DEVICES_PER_USER } from '@masia/contracts/wire';
+
 /** A UUID in its canonical text form: what the relay mints for key packages (Postgres `uuid`). */
 export const UUID_PATTERN =
   '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';
@@ -69,6 +71,79 @@ export const MAX_TREE_HASH_BYTES = 64;
 export const MAX_MEMBER_DELTA_ENTRIES = 256;
 // The longest device label (`MAX_DEVICE_TEXT_LENGTH`) is what a client trims to before it registers:
 // wire vocabulary, `@masia/contracts/wire` (TODO-513), re-exported by `index.ts`.
+
+// --- Call channel (ADR-228) ----------------------------------------------------------------------
+// The relay's own limits on its call channel (`call-channel.ts`). What a client shares with it (the
+// routes, the keep-alive, the body cap, the per-call caps and the size of the frame budget) is wire
+// vocabulary: `call-relay.ts` and `call-signal.ts` in `@masia/contracts/wire`.
+
+/** Open call streams one person (all their devices) may hold. A stream of the same device replaces, never adds. */
+export const CALL_STREAMS_PER_USER_MAX = 16;
+/** Open call streams the whole relay process holds. */
+export const CALL_STREAMS_MAX = 1_000;
+/** What a full relay asks a client to wait before it opens a stream again. */
+export const CALL_STREAMS_FULL_RETRY_AFTER_SECONDS = 30;
+/**
+ * A stream with more than this written and not yet taken by its reader gets no more signals (they are dropped). The
+ * check comes before a write, so a stream holds at most this plus one signal (`CALL_RELAY_LIMITS.signalBodyMaxBytes`).
+ */
+export const CALL_STREAM_BUFFER_MAX_BYTES = 64 * 1024;
+/** How often an open stream asks again whether its device is still an active USER device. */
+export const CALL_DEVICE_RECHECK_MS = 60_000;
+/**
+ * Calls one person may place, and calls to one other person, in a window: a call counts once, by its id, however many
+ * devices it rings, and a new id is a new call, so rotating the id buys nothing.
+ */
+export const CALL_RING_WINDOW_MS = 60 * 60_000;
+export const CALL_RING_USER_LIMIT = 20;
+export const CALL_RING_PAIR_LIMIT = 6;
+/**
+ * Control signals (ring, accept, accepted, decline, end) one device may send for one call: a ring and an end to every
+ * device of the other person, and a few more. ICE and tags have their own caps (`callRelayCap`).
+ */
+export const CALL_CONTROL_PER_END_MAX = 2 * MAX_DEVICES_PER_USER + 8;
+/**
+ * Frame budgets the relay holds at once, one per signed user and device that sent a call frame within the last refill
+ * of its bucket (a bucket left alone that long is full, and forgotten). Past this the oldest is forgotten and its
+ * sender starts again from a full burst. Reaching it takes this many signed pairs, each in a token the host minted,
+ * sending within one refill.
+ */
+export const CALL_FRAME_BUDGETS_MAX = 20 * CALL_STREAMS_MAX;
+/**
+ * A call whose signals have been quiet this long is forgotten: by the per-call caps, and as an admitted call that has
+ * not connected (a signal other than a ring passes only inside an admitted call; `call-channel.ts`).
+ */
+export const CALL_TALLY_IDLE_MS = 10 * 60_000;
+/**
+ * An admitted call that has connected (the rung device's `call:accept`, then the ringing device's `call:accepted`,
+ * passed between its two devices) is forgotten only after this long without a signal, so a long call's ICE restart
+ * and its `call:end` still pass; a `call:end` either way forgets it at once. It stays in its person's share
+ * (`CALL_ADMITTED_PER_USER_MAX`), so one person holds at most that many of these.
+ */
+export const CALL_ACCEPTED_IDLE_MS = 4 * 60 * 60_000;
+/**
+ * Admitted calls the relay holds at once, one per ringing device and rung device of a call. A ring that passed every
+ * cap admits its call between those two devices; any other signal passes only between the two devices of an admitted
+ * call. A ring past this is dropped (calls in progress go on, new ones wait for old ones to end or go quiet).
+ */
+export const CALL_ADMITTED_MAX = 20 * CALL_STREAMS_MAX;
+/**
+ * Admitted calls one person's rings may hold at once, ringing or connected: four calls that each ring every device a
+ * person may have. A ring past it is dropped, so one person (however many devices they hold) cannot fill
+ * `CALL_ADMITTED_MAX` for everyone.
+ */
+export const CALL_ADMITTED_PER_USER_MAX = 4 * MAX_DEVICES_PER_USER;
+/**
+ * Per-call tallies (one per device per call) the relay holds at once: both ends of every admitted call. A tally
+ * outlives an ended call until it goes quiet (`CALL_TALLY_IDLE_MS`), so the table can fill: then a signal that needs a
+ * new tally is dropped, and the calls already counted go on.
+ */
+export const CALL_TALLIES_MAX = 2 * CALL_ADMITTED_MAX;
+/**
+ * Allowed rings the relay remembers at once (a call's other devices then ring without being counted again; a refused
+ * ring is never remembered). Past this a ring is judged afresh, and so counted again: stricter, never let through.
+ */
+export const CALL_RING_VERDICTS_MAX = CALL_ADMITTED_MAX;
 
 // --- Paging ------------------------------------------------------------------------------------
 

@@ -11,7 +11,8 @@
     "start": "tsx server/main.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "smoke": "tsx smoke/two-people.ts"
+    "smoke": "tsx smoke/two-people.ts",
+    "smoke:call": "tsx smoke/two-people-call.ts"
   },
   "dependencies": {
     "@mantine/core": "^7.16.0",

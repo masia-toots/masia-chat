@@ -1,3 +1,4 @@
+import type { CallChannel } from '@masia/relay';
 import type { AuthHooks } from '../auth.js';
 import type { Database } from '../db.js';
 import type { DeviceListDirectory } from '../domain/device-lists.js';
@@ -26,4 +27,6 @@ export interface RouteDeps {
   readonly operatorUserId: string | null;
   /** The relay's clock (epoch ms), injected so tests can move time; tokens use the real clock. */
   readonly now: () => number;
+  /** The call channel's open streams and budgets (ADR-228); its routes exist only when it is switched on. */
+  readonly calls: CallChannel;
 }

@@ -4,6 +4,7 @@ import {
   resolveOperatorUserId,
   resolveRelayAllowedOrigins,
   resolveRelayBasePath,
+  resolveRelayCallsEnabled,
   resolveRelayHost,
   resolveRelayPort,
   resolveTokenExpectations,
@@ -26,6 +27,7 @@ const host = resolveRelayHost();
 const port = resolveRelayPort();
 const basePath = resolveRelayBasePath();
 const allowedOrigins = resolveRelayAllowedOrigins();
+const callsEnabled = resolveRelayCallsEnabled();
 const app = await buildServer({
   logger: true,
   database,
@@ -34,6 +36,7 @@ const app = await buildServer({
   operatorUserId: resolveOperatorUserId(),
   basePath,
   allowedOrigins,
+  callsEnabled,
 });
 // Key ids only (a hash of each PUBLIC key): enough to see which keys a rotation has the relay trusting.
 app.log.info({ tokenKeyIds: tokenKeys.kids }, 'access-token public keys loaded');
@@ -63,7 +66,13 @@ try {
   if (isWildcardHost(host)) {
     app.log.warn({ host }, 'listening on every interface; put a firewall or a proxy in front');
   }
-  app.log.info({ host, port, basePath: basePath === '' ? '/' : basePath, allowedOrigins }, 'relay listening');
+  app.log.info(
+    { host, port, basePath: basePath === '' ? '/' : basePath, allowedOrigins, callsEnabled },
+    'relay listening',
+  );
+  if (callsEnabled) {
+    app.log.warn('call channel on: this relay sees who calls whom, their addresses and every SDP; trusted networks only');
+  }
 } catch (error) {
   app.log.error(error);
   process.exit(1);

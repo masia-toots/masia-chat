@@ -336,6 +336,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -374,7 +375,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -415,6 +417,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -453,7 +456,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -494,6 +498,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -532,7 +537,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -573,6 +579,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -611,7 +618,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -664,6 +672,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -702,7 +711,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -930,6 +940,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -968,7 +979,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1009,6 +1021,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1047,7 +1060,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1088,6 +1102,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1126,7 +1141,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1167,6 +1183,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1205,7 +1222,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1246,6 +1264,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1284,7 +1303,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1443,6 +1463,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1481,7 +1502,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1522,6 +1544,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1560,7 +1583,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1601,6 +1625,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1639,7 +1664,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1680,6 +1706,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1718,7 +1745,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1759,6 +1787,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -1797,7 +1826,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -1968,6 +1998,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2006,7 +2037,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2047,6 +2079,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2085,7 +2118,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2126,6 +2160,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2164,7 +2199,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2205,6 +2241,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2243,7 +2280,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2292,6 +2330,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2330,7 +2369,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2402,6 +2442,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2440,7 +2481,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2481,6 +2523,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2519,7 +2562,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2560,6 +2604,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2598,7 +2643,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2639,6 +2685,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2677,7 +2724,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2718,6 +2766,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2756,7 +2805,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -2961,6 +3011,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -2999,7 +3050,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3040,6 +3092,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3078,7 +3131,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3119,6 +3173,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3157,7 +3212,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3198,6 +3254,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3236,7 +3293,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3277,6 +3335,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3315,7 +3374,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3356,6 +3416,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3394,7 +3455,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3541,6 +3603,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3579,7 +3642,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3620,6 +3684,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3658,7 +3723,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3699,6 +3765,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3737,7 +3804,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3778,6 +3846,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3816,7 +3885,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3857,6 +3927,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3895,7 +3966,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -3936,6 +4008,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -3974,7 +4047,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4155,6 +4229,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4193,7 +4268,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4234,6 +4310,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4272,7 +4349,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4313,6 +4391,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4351,7 +4430,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4392,6 +4472,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4430,7 +4511,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4471,6 +4553,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4509,7 +4592,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4754,6 +4838,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4792,7 +4877,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4833,6 +4919,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4871,7 +4958,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4912,6 +5000,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -4950,7 +5039,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -4991,6 +5081,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5029,7 +5120,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -5104,6 +5196,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5142,7 +5235,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -5183,6 +5277,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5221,7 +5316,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -5274,6 +5370,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5312,7 +5409,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -5526,6 +5624,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5564,7 +5663,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -5605,6 +5705,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5643,7 +5744,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -5684,6 +5786,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5722,7 +5825,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -5763,6 +5867,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -5801,7 +5906,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6011,6 +6117,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6049,7 +6156,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6090,6 +6198,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6128,7 +6237,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6169,6 +6279,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6207,7 +6318,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6248,6 +6360,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6286,7 +6399,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6327,6 +6441,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6365,7 +6480,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6435,6 +6551,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6473,7 +6590,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6514,6 +6632,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6552,7 +6671,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6593,6 +6713,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6631,7 +6752,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6672,6 +6794,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6710,7 +6833,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6751,6 +6875,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6789,7 +6914,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -6857,6 +6983,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -6895,7 +7022,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7128,6 +7256,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7166,7 +7295,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7207,6 +7337,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7245,7 +7376,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7286,6 +7418,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7324,7 +7457,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7365,6 +7499,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7403,7 +7538,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7444,6 +7580,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7482,7 +7619,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7550,6 +7688,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7588,7 +7727,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7821,6 +7961,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7859,7 +8000,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7900,6 +8042,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -7938,7 +8081,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -7979,6 +8123,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8017,7 +8162,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8058,6 +8204,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8096,7 +8243,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8137,6 +8285,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8175,7 +8324,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8243,6 +8393,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8281,7 +8432,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8322,6 +8474,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8360,7 +8513,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8616,6 +8770,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8654,7 +8809,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8695,6 +8851,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8733,7 +8890,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8774,6 +8932,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8812,7 +8971,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8853,6 +9013,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8891,7 +9052,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -8932,6 +9094,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -8970,7 +9133,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9038,6 +9202,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9076,7 +9241,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9117,6 +9283,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9155,7 +9322,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9365,6 +9533,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9403,7 +9572,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9444,6 +9614,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9482,7 +9653,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9523,6 +9695,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9561,7 +9734,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9602,6 +9776,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9640,7 +9815,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9681,6 +9857,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9719,7 +9896,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9787,6 +9965,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9825,7 +10004,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -9938,6 +10118,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -9976,7 +10157,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10017,6 +10199,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10055,7 +10238,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10096,6 +10280,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10134,7 +10319,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10175,6 +10361,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10213,7 +10400,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10254,6 +10442,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10292,7 +10481,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10333,6 +10523,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10371,7 +10562,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10412,6 +10604,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10450,7 +10643,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10592,6 +10786,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10630,7 +10825,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10671,6 +10867,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10709,7 +10906,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10750,6 +10948,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10788,7 +10987,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10829,6 +11029,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10867,7 +11068,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -10908,6 +11110,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -10946,7 +11149,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11088,6 +11292,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11126,7 +11331,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11167,6 +11373,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11205,7 +11412,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11246,6 +11454,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11284,7 +11493,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11325,6 +11535,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11363,7 +11574,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11404,6 +11616,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11442,7 +11655,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11483,6 +11697,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11521,7 +11736,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11752,6 +11968,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11790,7 +12007,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11831,6 +12049,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11869,7 +12088,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11910,6 +12130,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -11948,7 +12169,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -11989,6 +12211,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12027,7 +12250,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12068,6 +12292,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12106,7 +12331,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12147,6 +12373,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12185,7 +12412,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12226,6 +12454,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12264,7 +12493,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12506,6 +12736,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12544,7 +12775,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12585,6 +12817,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12623,7 +12856,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12664,6 +12898,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12702,7 +12937,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12743,6 +12979,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12781,7 +13018,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -12931,6 +13169,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -12969,7 +13208,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13010,6 +13250,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13048,7 +13289,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13089,6 +13331,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13127,7 +13370,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13168,6 +13412,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13206,7 +13451,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13247,6 +13493,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13285,7 +13532,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13326,6 +13574,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13364,7 +13613,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13530,6 +13780,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13568,7 +13819,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13609,6 +13861,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13647,7 +13900,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13688,6 +13942,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13726,7 +13981,8 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },
@@ -13767,6 +14023,7 @@
                         "DEVICE_OWNED_BY_OTHER",
                         "NOT_A_CONTACT",
                         "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
                         "DEVICE_LIST_NOT_FOUND",
                         "NOT_FOUND",
                         "EPOCH_CONFLICT",
@@ -13805,7 +14062,1000 @@
                         "ACTOR_RATE_LIMITED",
                         "TARGET_RATE_LIMITED",
                         "INTERNAL",
-                        "ROOM_BUSY"
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calls/stream": {
+      "get": {
+        "operationId": "getCallStream",
+        "summary": "This device's stream of call signals (server-sent events)",
+        "tags": [
+          "calls"
+        ],
+        "description": "Only when the relay runs with RELAY_CALLS_ENABLED. A `text/event-stream` for a USER device (403 CALL_NOT_ALLOWED otherwise): first `event: ready` with `{closesInMs}` (the stream closes when the token expires: open the next one, with a fresh token, before), then `event: signal` with `{conversationId, fromUserId, fromDeviceId, signal}` for every signal posted to this device, and a comment line about every 15 s. One stream per device: a new one ends the old one with `event: replaced`. The device is checked again while the stream is open; revoked, it is closed. Nothing is stored or queued: a signal for a device with no open stream is gone. Token in the Authorization header only. The relay cannot hear a call, but it sees who signals whom and when, both devices' addresses and every SDP; it applies no blocks, quiet hours or child rules. Meant for loopback or a trusted LAN.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The stream (`text/event-stream`), open until the token expires or the device is replaced.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The stream (`text/event-stream`), open until the token expires or the device is replaced.",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed (VALIDATION_FAILED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The request is malformed (VALIDATION_FAILED).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid bearer token (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "No valid bearer token (UNAUTHENTICATED).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller may not do this (see the `error` code).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The caller may not do this (see the `error` code).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (see the `error` code; `Retry-After` when it applies).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Too many requests (see the `error` code; `Retry-After` when it applies).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The room stayed locked by other writers (ROOM_BUSY); send the same request again after `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The room stayed locked by other writers (ROOM_BUSY); send the same request again after `Retry-After`.",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calls/signal": {
+      "post": {
+        "operationId": "postCallSignal",
+        "summary": "Hand one call signal to one device of the other person, now",
+        "tags": [
+          "calls"
+        ],
+        "description": "Only when the relay runs with RELAY_CALLS_ENABLED. The sender is the token's device and must be a USER device and a current member of the room (403 NOT_A_MEMBER or REMOVED); the room's current members must be USER devices of exactly two people and `toDeviceId` one of the other person's (403 CALL_NOT_ALLOWED). `signal` is a peer call signal (`call:ring`, `call:accept`, `call:accepted`, `call:decline`, `call:ice`, `call:verify`, `call:end`), checked for shape only (400 VALIDATION_FAILED). The receiver sees the sender as the relay knows it (`fromUserId`, `fromDeviceId`), never as the body says. 202 with an empty body, the same whether the target has an open stream or not: nothing is stored or queued. A device sends at most a burst of frames, then a few per second (429 ACTOR_RATE_LIMITED); calls a person places, and calls to one person, are capped per hour by call (429 ACTOR_RATE_LIMITED, TARGET_RATE_LIMITED). A ring that passes admits its call between the ringing device and the rung one; any other signal passes only between the two devices of an admitted call. An admitted call is forgotten after 10 minutes without a signal; once connected (`call:accept` from the rung device, then `call:accepted` from the ringing one), after 4 hours; and at once after a `call:end` either way, which itself is still delivered. Signals outside an admitted call, over a call's caps, or for a reader that has fallen behind are dropped, still 202. The relay cannot hear a call, but it sees who signals whom and when, both devices' addresses and every SDP; it applies no blocks, quiet hours or child rules. Meant for loopback or a trusted LAN.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "conversationId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                  },
+                  "toDeviceId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                  },
+                  "signal": {
+                    "type": "object",
+                    "description": "A peer call signal; validated in full by the relay (unknown fields are dropped).",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "call:ring",
+                          "call:accept",
+                          "call:accepted",
+                          "call:decline",
+                          "call:ice",
+                          "call:verify",
+                          "call:end"
+                        ]
+                      },
+                      "callId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{22}$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "callId"
+                    ],
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "conversationId",
+                  "toDeviceId",
+                  "signal"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Taken; delivered if the target has an open stream. No body."
+          },
+          "400": {
+            "description": "The request is malformed (VALIDATION_FAILED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The request is malformed (VALIDATION_FAILED).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid bearer token (UNAUTHENTICATED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "No valid bearer token (UNAUTHENTICATED).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller may not do this (see the `error` code).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The caller may not do this (see the `error` code).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The body is larger than the relay takes (PAYLOAD_TOO_LARGE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The body is larger than the relay takes (PAYLOAD_TOO_LARGE).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (see the `error` code; `Retry-After` when it applies).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Too many requests (see the `error` code; `Retry-After` when it applies).",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
+                      ],
+                      "description": "Stable machine code; branch on this, not on `message`."
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The room stayed locked by other writers (ROOM_BUSY); send the same request again after `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The room stayed locked by other writers (ROOM_BUSY); send the same request again after `Retry-After`.",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_FAILED",
+                        "UNAUTHENTICATED",
+                        "ACTOR_DEVICE_UNKNOWN",
+                        "ACTOR_DEVICE_REVOKED",
+                        "NOT_A_MEMBER",
+                        "REMOVED",
+                        "DEVICE_MISMATCH",
+                        "GUARDIAN_REMOVE_FORBIDDEN",
+                        "ROLE_FORBIDDEN",
+                        "REVOKE_FORBIDDEN",
+                        "DEVICE_OWNED_BY_OTHER",
+                        "NOT_A_CONTACT",
+                        "NOT_A_HOLDER",
+                        "CALL_NOT_ALLOWED",
+                        "DEVICE_LIST_NOT_FOUND",
+                        "NOT_FOUND",
+                        "EPOCH_CONFLICT",
+                        "DEVICE_LIST_VERSION_CONFLICT",
+                        "STILL_IN_ROOMS",
+                        "CONVERSATION_EXISTS",
+                        "DEVICE_IDENTITY_IMMUTABLE",
+                        "CLIENT_MSG_ID_REUSED",
+                        "KEY_PACKAGE_POOL_FULL",
+                        "IDENTITY_KEY_CHANGED",
+                        "IDENTITY_KEY_IN_USE",
+                        "IDENTITY_REQUEST_STATE",
+                        "IDENTITY_RESET_PENDING",
+                        "IDENTITY_REBIND_PROOF_REQUIRED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "DEVICE_NOT_IN_SIGNED_LIST",
+                        "DEVICE_REVOKED",
+                        "LAST_RESORT_REQUIRED",
+                        "ALREADY_MEMBER",
+                        "REMOVE_TARGET_NOT_MEMBER",
+                        "INVALID_MEMBER_DELTA",
+                        "MLS_HEADER_MISMATCH",
+                        "KEY_PACKAGE_NOT_CLAIMED_BY_COMMITTER",
+                        "HANDSHAKE_KIND_UNSUPPORTED",
+                        "KEY_PACKAGE_UNREADABLE",
+                        "KEY_PACKAGE_EXPIRED",
+                        "DEVICE_LIST_ENTRY_INVALID",
+                        "DEVICE_LIST_SIGNATURE_INVALID",
+                        "IDENTITY_REQUEST_SIGNATURE_INVALID",
+                        "HOLDER_PROOF_INVALID",
+                        "IDENTITY_REQUEST_LIMIT",
+                        "REBASE_LIMIT",
+                        "CLAIM_RATE_LIMITED",
+                        "UPLOAD_RATE_LIMITED",
+                        "ACTOR_RATE_LIMITED",
+                        "TARGET_RATE_LIMITED",
+                        "INTERNAL",
+                        "ROOM_BUSY",
+                        "CALL_STREAMS_FULL"
                       ],
                       "description": "Stable machine code; branch on this, not on `message`."
                     },

@@ -19,10 +19,12 @@ const tokenKeys = tokenKeyringOf([generateKeyPairSync('ed25519').publicKey]);
 
 const database = createDatabase(UNUSED_DATABASE_URL, { onIdleError: () => undefined });
 // Placeholder iss/aud: the document names the variables, never their values, and no token is verified.
+// The call channel is off by default (RELAY_CALLS_ENABLED); it is on here so its routes are documented.
 const app = await buildServer({
   database,
   tokenKeys,
   tokenExpectations: { issuer: 'openapi-export', audience: 'openapi-export-relay' },
+  callsEnabled: true,
 });
 try {
   await app.ready();

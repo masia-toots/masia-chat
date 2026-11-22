@@ -34,6 +34,8 @@
  * Pure module: no I/O, browser-safe.
  */
 
+import { isWireId } from './vocabulary.js';
+
 const MS_SEC = 1_000;
 
 export const CALL_EVENT = {
@@ -111,9 +113,8 @@ export const CALL_REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 export const CALL_DEVICE_ID_PATTERN = /^[A-Za-z0-9_.:-]{1,128}$/;
 /** A verification tag: HMAC-SHA256 → 32 bytes → 43 base64url chars, no padding. */
 export const CALL_TAG_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+/** The API's conversation id (a Postgres uuid): what `call:invite` names to it. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** A user id as the server names the caller (a UUID today; bounded, not assumed). */
-const USER_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 /** An ISO-8601 moment (`ringUntil`): bounded text that parses as a date. */
 const ISO_MAX_CHARS = 40;
 
@@ -266,7 +267,37 @@ function isoMoment(v: unknown): string | null {
   return typeof v === 'string' && v.length <= ISO_MAX_CHARS && Number.isFinite(Date.parse(v)) ? v : null;
 }
 
-function parseSignal(v: unknown): CallSignal | null {
+/**
+ * What one end of a call has relayed, counted against its per-call cap: the SDPs (offer, answer, restarts), the
+ * candidates (end-of-candidates included) and the verification tags.
+ */
+export type CallRelayKind = 'sdp' | 'candidate' | 'verify';
+
+const CALL_RELAY_CAPS: Readonly<Record<CallRelayKind, { readonly base: number; readonly perRefill: number }>> = {
+  sdp: { base: CALL_LIMITS.sdpPerEndMax, perRefill: CALL_LIMITS.sdpPerRefill },
+  candidate: { base: CALL_LIMITS.candidatesPerEndMax, perRefill: CALL_LIMITS.candidatesPerRefill },
+  verify: { base: CALL_LIMITS.verifyPerEndMax, perRefill: 0 },
+};
+
+/**
+ * How many of `kind` one end of a call may relay once the call is `ageMs` old: the base cap, plus — for SDPs and
+ * candidates, which an ICE restart sends again with every fresh TURN set — one refill per `CALL_LIMITS.relayRefillMs`.
+ */
+export function callRelayCap(kind: CallRelayKind, ageMs: number): number {
+  const { base, perRefill } = CALL_RELAY_CAPS[kind];
+  return base + Math.floor(Math.max(0, ageMs) / CALL_LIMITS.relayRefillMs) * perRefill;
+}
+
+/** Which per-call cap a relayed signal counts against. */
+export function callRelayKindOf(signal: CallSignal): Exclude<CallRelayKind, 'verify'> {
+  return signal.kind === 'offer' || signal.kind === 'answer' ? 'sdp' : 'candidate';
+}
+
+/**
+ * Validate what `call:ice` carries (an SDP, a candidate, or the end of candidates) against `CALL_LIMITS`. Null for
+ * anything malformed or oversize. Unknown extra fields are dropped.
+ */
+export function parseCallSignal(v: unknown): CallSignal | null {
   if (!isObj(v)) return null;
   switch (v['kind']) {
     case 'offer':
@@ -324,7 +355,7 @@ export function parseCallClientEvent(raw: unknown): CallClientEvent | null {
     }
     case CALL_EVENT.ICE: {
       const callId = str(p['callId'], CALL_ID_PATTERN);
-      const signal = parseSignal(p['signal']);
+      const signal = parseCallSignal(p['signal']);
       if (!callId || !signal) return null;
       return { type: 'call:ice', payload: { callId, signal } };
     }
@@ -370,8 +401,10 @@ export function parseCallServerEvent(raw: unknown): WsCallServerEvent | null {
       return { type: 'call:invite', payload: { requestId, callId, ringUntil } };
     }
     case CALL_EVENT.RING: {
-      const conversationId = str(p['conversationId'], UUID_PATTERN);
-      const callerUserId = str(p['callerUserId'], USER_ID_PATTERN);
+      // Read as wire ids, not as the API's uuids: a ring also reaches the engine from a relay's call channel
+      // (`call-relay.ts`), whose conversation and user ids are wire ids (a uuid is one too). Bounded, not assumed.
+      const conversationId = isWireId(p['conversationId']) ? p['conversationId'] : null;
+      const callerUserId = isWireId(p['callerUserId']) ? p['callerUserId'] : null;
       const callerDeviceId = str(p['callerDeviceId'], CALL_DEVICE_ID_PATTERN);
       const ringUntil = isoMoment(p['ringUntil']);
       if (!conversationId || !callerUserId || !callerDeviceId || !ringUntil) return null;
@@ -386,7 +419,7 @@ export function parseCallServerEvent(raw: unknown): WsCallServerEvent | null {
       return { type: 'call:accept', payload: { callId, callerDeviceId, calleeDeviceId } };
     }
     case CALL_EVENT.ICE: {
-      const signal = parseSignal(p['signal']);
+      const signal = parseCallSignal(p['signal']);
       return signal ? { type: 'call:ice', payload: { callId, signal } } : null;
     }
     case CALL_EVENT.VERIFY: {

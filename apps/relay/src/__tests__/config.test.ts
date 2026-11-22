@@ -9,11 +9,13 @@ import {
   isWildcardHost,
   OPERATOR_USER_ID_ENV,
   RELAY_BASE_PATH_ENV,
+  RELAY_CALLS_ENABLED_ENV,
   RELAY_HOST_ENV,
   RELAY_PORT_ENV,
   resolveDatabaseUrl,
   resolveOperatorUserId,
   resolveRelayBasePath,
+  resolveRelayCallsEnabled,
   resolveRelayHost,
   resolveRelayPort,
   resolveTokenExpectations,
@@ -105,6 +107,21 @@ describe('resolveRelayBasePath', () => {
     expect(() => resolveRelayBasePath({ [RELAY_BASE_PATH_ENV]: value })).toThrow(
       RELAY_BASE_PATH_ENV,
     );
+  });
+});
+
+describe('resolveRelayCallsEnabled (ADR-228)', () => {
+  it('is off unless the variable turns it on', () => {
+    expect(resolveRelayCallsEnabled({})).toBe(false);
+    expect(resolveRelayCallsEnabled({ [RELAY_CALLS_ENABLED_ENV]: '' })).toBe(false);
+    expect(resolveRelayCallsEnabled({ [RELAY_CALLS_ENABLED_ENV]: '0' })).toBe(false);
+    expect(resolveRelayCallsEnabled({ [RELAY_CALLS_ENABLED_ENV]: 'false' })).toBe(false);
+    expect(resolveRelayCallsEnabled({ [RELAY_CALLS_ENABLED_ENV]: '1' })).toBe(true);
+    expect(resolveRelayCallsEnabled({ [RELAY_CALLS_ENABLED_ENV]: 'TRUE' })).toBe(true);
+  });
+
+  it.each(['yes', 'on', '2', 'enabled'])('refuses "%s", naming the variable', (value) => {
+    expect(() => resolveRelayCallsEnabled({ [RELAY_CALLS_ENABLED_ENV]: value })).toThrow(RELAY_CALLS_ENABLED_ENV);
   });
 });
 

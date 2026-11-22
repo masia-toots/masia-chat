@@ -7,6 +7,150 @@ lives in the host project's private working space, so the entries below carry wh
 is in [`context.md`](context.md). "Lead" is the AI session that plans and reviews; an "agent" does one step.
 Entries are added at the top. Times are agent working time, not elapsed days.
 
+## 2026-11-22 · The playground's call, after review
+
+- **What.** The review of the playground's call found two claims that were stronger than the code. The ICE answer
+  said it checked that "the page and the relay" are on loopback, but the relay's address as the page sees it is
+  always the page's own `/relay` door, so only the page was ever checked; the answer now takes the page's address
+  alone, and every document says plainly that the relay behind the door (`DEMO_RELAY_URL`) is not checked. The
+  call smoke's hang-up step pressed «Close» on both screens for up to a minute, so a hang-up that never reached the
+  other side (ending there as `lost` half a minute later) still passed; it now makes two calls, the first ended by
+  the caller and the second by the callee, and each time the other side must show a plain "Call ended" with no
+  problem line within five seconds and close its screen by itself, with «Close» never pressed. It also checks that
+  each screen names the other person and that the received audio energy grows, not only packets and bytes.
+  Smaller: a room's call key is refused unless its group is open on the tab; a test shows a tag made before a
+  commit failing after it, and `fresh` catching the room up first; the call setup is made once per tab by
+  `useState`; the fold button's backing is opaque; the README lists the call's known limits (six HTTP/1.1
+  connections per browser, a refused token kept until the tab renews it, a stopped channel back only after a
+  reload) and the exact loopback names. The relay changed under the call the same day, after its own second
+  review: a call that only rings is still forgotten after 10 quiet minutes, but a connected one (the callee's
+  `call:accept`, then the caller's `call:accepted`) keeps its place through 4 quiet hours, and a `call:end` either
+  way is delivered and then closes it; the frame budget is per signed user and device, and a slow reader is cut off
+  past 64 KiB unread. The sentences that said a hang-up after ten quiet minutes is dropped (the playground's
+  README, `call-ports.ts`, `calls.md`, design 17 in `context.md`) now say this.
+- **Why.** A smoke that cannot fail on the thing it names, and a security sentence the code does not back, are
+  worse than neither.
+- **Files.** `demo/src/host/call-ice.ts` (+ test) · `demo/src/host/call.tsx` · `demo/src/client/room.ts` ·
+  `demo/src/client/runtime.test.ts` · `demo/smoke/two-people-call.ts` · `demo/src/host/call-frame.css` ·
+  `demo/src/host/call-icons.tsx` · `demo/src/host/call-ports.ts` · `demo/README.md` · `calls.md` · `context.md` ·
+  this log's entry below (its ICE decision corrected in place, as it had not left the branch).
+- **Decision.** No check of the relay behind the door: the playground states what it does not check instead. The
+  fold mark keeps pointing down, as the first host's does. The smoke reads the end through the screen that is
+  already there (stage, closing words, problem line); the package's screen did not need a new attribute.
+- **Checked.** 153 tests in 19 files; `smoke:call` against the changed relay with the switch on, both directions:
+  each side about 100 audio packets in 2 seconds with growing energy, and a plain end on the other side within
+  0.2 seconds of the hang-up.
+- **Next.** The adapter's in-memory relay in this package's tests never closes a call on `call:end`. Made to, it
+  shows two ends the changed relay now drops, harmlessly: a second `answered-elsewhere` to a device already told,
+  and the second side's end when both sides close. Keeping "the adapter never sends what the relay drops" true is a
+  change to the adapter, not to the test alone.
+
+## 2026-11-22 · A call between the playground's two tabs
+
+- **What.** The playground places a one-to-one audio call between its two tabs, on this package's pieces: the
+  engine (`useAudioCallHost`), the call screen (`AudioCallHost`), «Call» (`useCallEntry`), the binding
+  (`callTag` / `callVerify`) over a keyring of the playground's room, the plain `<audio>` speaker, and the relay's
+  call channel as the socket. The playground adds its English words for every screen key, an inline icon for every
+  icon name, a small `esc*` frame stylesheet, and an ICE answer of its own. Its server now streams an event
+  stream through its `/relay` door instead of buffering it, and its compose file starts the relay with
+  `RELAY_CALLS_ENABLED=true`. A Chromium smoke (`smoke:call`), run by hand against the running stack, places a
+  call between two people and checks that the received audio grows on both sides and that a hang-up ends it on
+  both.
+- **Why.** The playground is the first outside consumer of the package, and a call that only the first host can
+  place proves nothing about the open pieces. The two tabs on one machine are also the smallest honest setup for
+  a call: no STUN, no TURN, nothing that is not in this repository.
+- **Files.** `demo/src/host/call*.ts(x)` · `demo/src/host/call-frame.css` · `demo/src/client/room.ts` and
+  `runtime.ts` (the room's call key) · `demo/src/Shell.tsx` · `demo/server/proxy.ts` · `demo/docker-compose.yml` ·
+  `demo/smoke/` · `demo/README.md` · `calls.md` · `context.md` · the open repository's root `README.md`.
+- **Decision.** ICE is `all` with no servers when the page is on loopback; anywhere else it is relay-only with no
+  servers, so an answered call ends as `relay-unavailable` instead of handing each side the other's IP address.
+  Only the page is checked: it reaches the relay through its own server's `/relay` door, and where that server
+  forwards (`DEMO_RELAY_URL`) is not checked, so whoever runs that relay sees both addresses and every SDP. The binding runs in the page, since the playground has no MLS worker; the key is wiped after
+  each question as in a worker. «Call» is offered only in a room of exactly two people. Every use of the relay
+  adapter sits in one file (`demo/src/host/call-ports.ts`), imported by name. The wiring asks nothing of the relay
+  beyond its admitted-call rule: the engine's order (ring, accept, then the SDP and the check) is exactly what the
+  relay admits, and the hang-up of a call quiet for ten minutes, dropped there, ends the other side when its audio
+  stops. Against a relay with the switch off, the stream's `404` stops the adapter for good and «Call» stays off
+  with its hint. The README says what a call proves (the fingerprints bound to the chat's group) and what it does
+  not protect (the relay sees the signalling, both IP addresses and the SDP; there are no rules on who may call).
+  The adapter announces closes but not opens, so the playground reads `isOpen()` every half second while «Call»
+  listens; the adapter was left as it is.
+- **Checked.** `smoke:call` against the relay with the switch on, two isolated Chromium pages with a fake
+  microphone: both live and verified, each side received 100 audio packets in 2 seconds, and the caller's hang-up
+  closed both screens. With the switch off, each tab asked for its stream once (`404`) and «Call» stayed off with
+  "The call channel is not connected".
+- **Next.** An open event in the adapter would remove that poll; a test in this package that drives the engine
+  itself over the channel.
+
+## 2026-11-22 · The relay can carry call signals, opt-in, and a socket adapter uses it
+
+- **What.** An instant, unstored call-signal channel in the relay (`GET /calls/stream`, server-sent events;
+  `POST /calls/signal`, always an empty `202`), registered only with `RELAY_CALLS_ENABLED=true`; its vocabulary
+  (`call-relay.ts`: routes, events, limits, `parseRelayCallSignal` and the stream parsers) in
+  `@masia/contracts/wire`; its streams and budgets (`createCallChannel`) in `@masia/relay`; and
+  `createRelayCallSocket` in `@masia/messenger/call`, the engine's socket port over the two routes.
+- **Why.** The engine, its binding and its screen moved in the same day, but nothing in this repository could
+  carry its signals, so no call could run without a host's own server.
+- **Files.** `src/call/relay-socket.ts` · `../contracts/src/wire/call-relay.ts` · `../relay/src/call-channel.ts` ·
+  `../../apps/relay/src/routes/calls.ts` · `../../apps/relay/src/domain/call-parties.ts` · `calls.md` ·
+  `canon.md` · `context.md` · `ARCHITECTURE.md` · `../README.md`.
+- **Decision.** Server-sent events down and a POST per signal up, on the server that already runs (design 17).
+  A security review set the conditions before the code: `USER` devices of a two-person room only; the relay
+  stamps the sender; the client pins its peer and drops a replayed ring; the same answer whether the target
+  listens or not; a stream closes when its token expires and re-checks its device every minute; caps per device,
+  per caller, per pair, per call and per stream; no token in a query string and no SDP in a log; off by default;
+  no STUN. Rejected: a WebSocket (a new dependency, a second protocol to secure) and sealed mailbox messages (poll
+  lag, stored call metadata). The operator of a relay with the switch on sees who calls whom, both addresses and
+  every SDP, and applies no host rules; the docs say so.
+- **Review of the build.** A code review found that a made-up call id bought a fresh set of per-call caps for
+  every signal but a ring. Now a ring admits its call between the ringing and the rung device, any other signal
+  passes only inside an admitted call (either way; otherwise dropped, still `202`), a call quiet for 10 minutes
+  is forgotten, and every table the channel keeps has a hard ceiling, with a share per person for admitted calls.
+  Also: the frame budget is spent before any database read; a stream's life is bounded by the token's own
+  lifetime as well as its `exp`, and its timer never past what Node takes; `deliver` serialises before it looks
+  for the stream; the adapter caps `Retry-After` at its backoff ceiling and `closesInMs` at the longest a token
+  lives. Cost, accepted: the hang-up of a call silent for 10 minutes no longer reaches the other end, which ends
+  the call when the audio stops.
+- **Next.** A call between the playground's two tabs over the channel, on the package's call screen, with its ICE
+  answer (every candidate only on loopback, relay-only otherwise); a test that drives the engine itself over it.
+
+## 2026-11-22 · The call screen and its hooks move into the open packages
+
+- **What.** The first host's one-to-one call screen moved in behind a new door, `@masia/messenger/call/react`.
+  It brings the pure render (`AudioCallScreen` with `audio-call.css`), the host component that owns the timers,
+  the fold, the focus and the cues (`AudioCallHost`), the engine hooks (`useAudioCallHost`, `useAudioCall`), the
+  way into a call (`useCallEntry`), and the pure readings under them (`call-view`, `call-entry`). A plain
+  `<audio>` speaker came with them (`@masia/messenger/call/browser-speaker`). The host passes in the words
+  (`CALL_SCREEN_TEXT_KEYS`), the icons (`CALL_ICON_NAMES`), its layer, its ports, its signalling hold and the cues.
+- **Why.** The playground is to mount the same screen as the first host. The screen used no UI kit component, only
+  its own CSS and the host's full-screen frame classes, so it could move as it is.
+- **Files.** `src/call/react/` · `src/call/browser-speaker.ts` · `package.json` (two exports) · `calls.md` §
+  The call screen · `context.md`.
+- **Decision.** A move with no change of behaviour: the first host draws the same pixels through thin wrappers.
+  What stays with the host: the ring's sound, the room directory, the push plumbing, its audio-bus speaker and
+  the frame stylesheet (`esc*`). An open `extra` slot takes the host's own row (for an assistant in the call);
+  nothing fills it yet.
+- **Next.** The playground mounts the screen with a frame stylesheet of its own.
+
+## 2026-11-22 · The call binding and the engine's own suites move in
+
+- **What.** The call binding (`callTag` / `callVerify`, `src/call/call-binding.ts`) moved in from the first host,
+  where it runs inside the MLS Worker, with the engine's own suites (`call-engine.test.ts`,
+  `call-engine-tracks.test.ts`, `call-engine-support.ts`) and the binding's suites on a fixed keyring (who the peer
+  may be, the badge). It is exported from `@masia/messenger/call` and from its own door,
+  `@masia/messenger/call/call-binding`, so a worker can load it without the engine.
+- **Why.** The engine's suites drive the real binding, so neither could move without the other, and a binding
+  that only the first host had left the open repository with an engine it could not test end to end.
+- **Files.** `src/call/call-binding.ts` · `src/call/index.ts` · `src/call/__tests__/` · `package.json` (the door) ·
+  `calls.md` · `context.md`.
+- **Decision.** A move with no change of behaviour; history follows the files (`git mv`). Two spellings changed
+  because the package may not import the host: a refusal throws the package's own `CallBindingError` (`INVALID`),
+  which the first host maps back onto its own worker error, and a room member is typed as the package's
+  `DeviceIdentity` (the same `userId`, `deviceId`, `role`). The keyring that derives the call key from a live
+  room, and the binding's tests over a real room and a real Worker port, stay with the host.
+- **Next.** The call screen into the package, then signals through the relay and a call between the playground's
+  two tabs (context, next step 5).
+
 ## 2026-11-22 · The one-to-one audio call engine moves into the open packages
 
 - **What.** The host-neutral part of the first host's one-to-one audio call moved in: the engine

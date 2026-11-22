@@ -46,8 +46,23 @@ declare module 'fastify' {
   interface FastifyRequest {
     /** Set by the `authenticate` hooks; read it through `principalOf`. */
     principal: Principal | null;
+    /** When the token stops (`VerifiedToken.expiresAtMs`); set beside `principal`. Read it through `tokenExpiryOf`. */
+    tokenExpiresAtMs: number | null;
   }
 }
+
+/** A verified token: who it speaks for, and when it stops (a call stream closes then, ADR-228). */
+export interface VerifiedToken {
+  readonly principal: Principal;
+  /**
+   * When the token stops, epoch milliseconds: `exp`, but never later than `iat` plus the longest lifetime and the
+   * clock tolerance. The claims check already holds `exp - iat` to that lifetime; a call stream's end is bounded here
+   * too, so it never rests on one check alone.
+   */
+  readonly expiresAtMs: number;
+}
+
+const MS_PER_SECOND = 1000;
 
 function unauthenticated(): RelayError {
   // One message for every cause (missing, malformed, expired, wrong signature, wrong issuer or
@@ -83,6 +98,15 @@ export async function verifyAccessToken(
   keyring: TokenKeyring,
   options: VerifyOptions,
 ): Promise<Principal> {
+  return (await verifyAccessTokenWithExpiry(token, keyring, options)).principal;
+}
+
+/** `verifyAccessToken`, keeping the token's `exp` too. Same checks, same single refusal. */
+export async function verifyAccessTokenWithExpiry(
+  token: string,
+  keyring: TokenKeyring,
+  options: VerifyOptions,
+): Promise<VerifiedToken> {
   const expected = options.expect;
   let payload;
   try {
@@ -109,8 +133,14 @@ export async function verifyAccessToken(
     throw unauthenticated();
   }
 
+  // `exp` and `iat` are required claims, so JOSE has checked they are there; the guard keeps the types honest.
+  if (typeof payload.exp !== 'number' || typeof payload.iat !== 'number') throw unauthenticated();
+  const expiresAtSeconds = Math.min(
+    payload.exp,
+    payload.iat + RELAY_TOKEN_TTL_SECONDS + RELAY_TOKEN_CLOCK_TOLERANCE_SECONDS,
+  );
   try {
-    return readRelayTokenClaims(payload, expected);
+    return { principal: readRelayTokenClaims(payload, expected), expiresAtMs: expiresAtSeconds * MS_PER_SECOND };
   } catch {
     throw unauthenticated();
   }
@@ -129,6 +159,12 @@ function bearerToken(header: string | undefined): string {
 export function principalOf(request: FastifyRequest): Principal {
   if (request.principal === null) throw unauthenticated();
   return request.principal;
+}
+
+/** When the caller's token expires, epoch milliseconds. Throws if the route forgot its auth hook. */
+export function tokenExpiryOf(request: FastifyRequest): number {
+  if (request.tokenExpiresAtMs === null) throw unauthenticated();
+  return request.tokenExpiresAtMs;
 }
 
 /**
@@ -156,6 +192,11 @@ export interface AuthHooks {
    * revoked.
    */
   readonly requireActiveDevice: AuthHook;
+  /**
+   * The second half of `requireActiveDevice` alone, for a route that runs `authenticate` and a gate of its own first
+   * (the call routes spend their frame budget before any database read): `[authenticate, gate, checkActiveDevice]`.
+   */
+  readonly checkActiveDevice: AuthHook;
 }
 
 export interface AuthHookOptions {
@@ -176,15 +217,17 @@ export function drivesDevice(
 
 export function createAuthHooks(options: AuthHookOptions): AuthHooks {
   const authenticate: AuthHook = async (request) => {
-    request.principal = await verifyAccessToken(
+    // The token is read from the Authorization header only: never from a query string, where it would land in logs.
+    const verified = await verifyAccessTokenWithExpiry(
       bearerToken(request.headers.authorization),
       options.keyring,
       { expect: options.expect, now: options.now },
     );
+    request.principal = verified.principal;
+    request.tokenExpiresAtMs = verified.expiresAtMs;
   };
 
-  const requireActiveDevice: AuthHook = async (request, reply) => {
-    await authenticate(request, reply);
+  const checkActiveDevice: AuthHook = async (request) => {
     const principal = principalOf(request);
     const { rows } = await options.db.query<{ revoked: boolean; userId: string; role: DeviceRole }>(
       'SELECT revoked_at IS NOT NULL AS revoked, user_id AS "userId", role FROM devices WHERE id = $1',
@@ -204,5 +247,10 @@ export function createAuthHooks(options: AuthHookOptions): AuthHooks {
     }
   };
 
-  return { authenticate, requireActiveDevice };
+  const requireActiveDevice: AuthHook = async (request, reply) => {
+    await authenticate(request, reply);
+    await checkActiveDevice(request, reply);
+  };
+
+  return { authenticate, requireActiveDevice, checkActiveDevice };
 }

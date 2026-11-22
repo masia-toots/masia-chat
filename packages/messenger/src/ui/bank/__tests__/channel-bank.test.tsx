@@ -226,8 +226,9 @@ describe('ChannelBank: the lazy window', () => {
 
 /**
  * OTHER FAMILIES (polishing П16, founder 2026-11-08, variant Г). The model (`bankStrip` / `stripSegments`) decides who sits where
- * and its own tests falsify that; what is proven HERE is what the bank draws from it: a delimiter — a thin tick and a tiny caps
- * header, in a group named for a screen reader — before the FIRST chip of each other family, only when such a chip is shown,
+ * and its own tests falsify that; what is proven HERE is what the bank draws from it: a delimiter — a thin tick and the family's
+ * name (founder 2026-11-22: «тільки назва»; the caps kicker only for an unnamed family), in a group named for a screen reader —
+ * before the FIRST chip of each other family, only when such a chip is shown,
  * never before the active chip, never a control, and no badge on any chip.
  */
 describe('ChannelBank: other families (П16)', () => {
@@ -257,8 +258,11 @@ describe('ChannelBank: other families (П16)', () => {
     const delim = group.firstElementChild!;
     expect(delim.classList.contains('chbank__delim')).toBe(true);
     expect(delim.getAttribute('aria-hidden')).toBe('true');
-    expect(q('.chbank__delim-kicker', delim)!.textContent).toBe('Other family');
+    // The visible header is the family's NAME alone (founder 2026-11-22: «тільки назва»); the screen reader still hears
+    // «Other family · Бобри» from the group's label.
     expect(q('.chbank__delim-name', delim)!.textContent).toBe('Бобри');
+    expect(q('.chbank__delim-kicker', delim)).toBeNull();
+    expect(delim.textContent).toBe('Бобри');
     // …and it is a picture, not a control: no button, nothing focusable.
     expect(delim.tagName).not.toBe('BUTTON');
     expect(qa('button, [tabindex]', delim)).toHaveLength(0);

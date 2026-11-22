@@ -248,9 +248,10 @@ export function ChannelBank({
         nextLabel={t('common.scrollNext')}
       >
         {/* Each OTHER family's people sit behind a delimiter (polishing П16, founder 2026-11-08): a group container named for a
-            screen reader («Інша родина · Бобри»), the visible tick + header aria-hidden and not a control. The current
-            family's own run — the head and its people — is drawn bare, exactly as before. The model decides who sits where
-            (`stripSegments`); this only draws it. */}
+            screen reader («Інша родина · Бобри»), the visible tick + header aria-hidden and not a control. The header shows
+            the family's NAME alone (founder 2026-11-22: «тільки назва»); the «Інша родина» kicker appears only for a family
+            the host could not name, so the tick never stands bare. The current family's own run — the head and its
+            people — is drawn bare, exactly as before. The model decides who sits where (`stripSegments`); this only draws it. */}
         {stripSegments(strip, shown.length).map((seg, at) =>
           seg.family ? (
             <div
@@ -260,8 +261,9 @@ export function ChannelBank({
               aria-label={seg.family.name ? t('bank.otherFamilyNamed', { name: seg.family.name }) : t('bank.otherFamily')}
             >
               <span className="chbank__delim" aria-hidden="true">
-                <span className="chbank__delim-kicker">{t('bank.otherFamily')}</span>
-                {seg.family.name && <span className="chbank__delim-name">{seg.family.name}</span>}
+                {seg.family.name
+                  ? <span className="chbank__delim-name">{seg.family.name}</span>
+                  : <span className="chbank__delim-kicker">{t('bank.otherFamily')}</span>}
               </span>
               {seg.chips.map(renderChip)}
             </div>

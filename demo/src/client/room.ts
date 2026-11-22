@@ -1,4 +1,5 @@
-import { parseMlsHeader, RelayErrorCode } from '@masia/contracts/wire';
+import { CALL_FP_EXPORTER_LABEL, CALL_FP_KEY_BYTES, parseMlsHeader, RelayErrorCode } from '@masia/contracts/wire';
+import type { CallKey } from '@masia/messenger/call/call-binding';
 import {
   MlsEngineError,
   type GroupState,
@@ -200,6 +201,29 @@ export class Room {
     this.outbox = [...this.outbox, { input }];
     this.changed();
     return this.exclusive(() => this.settle());
+  }
+
+  /**
+   * The call key `K` of a call in this room: the MLS exporter for `callId` at the epoch this tab holds now, with the
+   * members of that epoch. Only the call binding asks, and it wipes the bytes after each question. `fresh` (a retry
+   * after a check that failed) runs one pass of the room first, so a commit the other side made is applied. Under the
+   * room's lock: a poll never moves the group between the epoch read and the key derived.
+   */
+  callKey(callId: string, fresh: boolean): Promise<CallKey> {
+    return this.exclusive(async () => {
+      // Only a room whose group this tab holds speaks for a call: never one still probing, being created, or failed.
+      if (this.phase !== 'ready') throw new Error('ROOM_NOT_READY');
+      if (fresh) await this.settle();
+      const group = this.group;
+      if (group === undefined) throw new Error('ROOM_NOT_READY');
+      const key = await this.engine.exporter(
+        group,
+        CALL_FP_EXPORTER_LABEL,
+        CALL_FP_KEY_BYTES,
+        new TextEncoder().encode(callId),
+      );
+      return { key, epoch: Number(this.engine.epoch(group)), members: this.engine.members(group) };
+    });
   }
 
   // --- The lock and the snapshot -------------------------------------------------------------------

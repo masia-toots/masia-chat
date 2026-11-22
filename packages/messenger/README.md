@@ -14,9 +14,11 @@ application; it talks to the world only through the ports in `@masia/contracts`.
   card and the security state of a room;
 - the one-to-one audio call engine (`@masia/messenger/call`): peer-to-peer WebRTC audio that plays nothing
   until both devices have proved each other through the room's MLS secret. The host provides signalling and
-  TURN through ports; there is no call screen here and the playground has no call yet
-  ([`docs/calls.md`](docs/calls.md));
-- a relay (own database, epoch serializer, device and key-package API) and a [playground](../../demo/README.md).
+  TURN through ports, or signals through the relay's opt-in call channel with `createRelayCallSocket`. The
+  binding to the room's MLS secret, a plain speaker and the call screen with its React hooks
+  (`@masia/messenger/call/react`) are here too; the playground has no call yet ([`docs/calls.md`](docs/calls.md));
+- a relay (own database, epoch serializer, device and key-package API, and an unstored call-signal channel that
+  is off unless `RELAY_CALLS_ENABLED=true`) and a [playground](../../demo/README.md).
 
 Not in this package: the runtime that drives the engine against the relay (commits, one writer per room,
 enrolling devices). The first host and the playground each carry one, so `createMessenger` is still only a
@@ -106,7 +108,7 @@ method.
 in a room (the host's side is only partly built), linking a new device, a run on a real phone, and one switch
 for all conversations in the first host after that run. Four design amendments wait for a decision
 ([context](docs/context.md#open-questions)).
-Signalling calls through the relay, a call in the playground and media are phase 2. The working rules for a session are in [`CLAUDE.md`](CLAUDE.md).
+A call in the playground (the relay can now carry its signals, opt-in) and media are phase 2. The working rules for a session are in [`CLAUDE.md`](CLAUDE.md).
 
 ## License
 
