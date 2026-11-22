@@ -11,7 +11,9 @@
     "./fakes": "./src/fakes/index.ts",
     "./contract-tests": "./src/contract-tests/index.ts",
     "./wire": "./src/wire/index.ts",
-    "./wire/relay-api": "./src/wire/relay-api.ts"
+    "./wire/relay-api": "./src/wire/relay-api.ts",
+    "./wire/call-signal": "./src/wire/call-signal.ts",
+    "./wire/call-verify-tag": "./src/wire/call-verify-tag.ts"
   },
   "scripts": {
     "test": "vitest run",

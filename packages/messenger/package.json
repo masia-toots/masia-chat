@@ -13,6 +13,9 @@
     "./hooks": "./src/hooks/index.ts",
     "./ui": "./src/ui/index.ts",
     "./mls": "./src/mls/index.ts",
+    "./call": "./src/call/index.ts",
+    "./call/audio-call-machine": "./src/call/audio-call-machine.ts",
+    "./state-machine": "./src/state-machine/create-machine.ts",
     "./bundler/optional-peers": "./bundler/optional-peers.mjs"
   },
   "scripts": {

@@ -17,7 +17,7 @@ far it is today. The project is pre-1.0.
 | Directory | What | Licence |
 | --- | --- | --- |
 | [`packages/contracts`](packages/contracts) | The ports: the only surface the messenger and the relay share with a host, with in-memory fakes and the contract suites that prove an implementation | Apache-2.0 |
-| [`packages/messenger`](packages/messenger) | The client: the MLS core, the state of a conversation, the UI core; and the documentation of the whole project | Apache-2.0 |
+| [`packages/messenger`](packages/messenger) | The client: the MLS core, the state of a conversation, the UI core, the one-to-one audio call engine; and the documentation of the whole project | Apache-2.0 |
 | [`packages/relay`](packages/relay) | The relay's delivery logic as a library | AGPL-3.0-only |
 | [`apps/relay`](apps/relay) | The relay as a process: a Fastify server with its own database | AGPL-3.0-only |
 | [`demo`](demo) | The playground: one command, two browser tabs, an encrypted chat through a local relay | Apache-2.0 |
@@ -69,8 +69,12 @@ with test counts and dates, is [`packages/messenger/docs/context.md`](packages/m
 - The relay is a mailbox over HTTP: clients poll, and there is no push channel. Deployment, TLS and backups are
   yours to decide. The relay checks tokens; minting them is the host's job.
 - Pictures and files do not go through the encrypted path yet.
-- Calls are not in this repository. The first host has one-to-one audio calls, built outside it; moving them
-  in is separate work, not started.
+- Calls are here only in part. The one-to-one audio call engine, its state machine and its wire contract are
+  in this repository: `@masia/messenger/call` and `@masia/contracts/wire`
+  ([how a host plugs in](packages/messenger/docs/calls.md)). Signalling and TURN credentials are not: a host
+  provides them through the engine's ports. The machine, SDP and wire tests are here; the engine's own test
+  suites still run in the first host. The playground has no call yet, and there is no call screen
+  here. Both are the next step.
 - `ts-mls` is young and has one maintainer, and neither it nor this code has had an outside security audit.
   The open design questions (who signs a minor's device list, how people verify each other, what a message is
   bound to, how much to trust a web device) are listed in `context.md`.

@@ -7,6 +7,25 @@ lives in the host project's private working space, so the entries below carry wh
 is in [`context.md`](context.md). "Lead" is the AI session that plans and reviews; an "agent" does one step.
 Entries are added at the top. Times are agent working time, not elapsed days.
 
+## 2026-11-22 · The one-to-one audio call engine moves into the open packages
+
+- **What.** The host-neutral part of the first host's one-to-one audio call moved in: the engine
+  (`createAudioCallEngine(ports)`), its state machine, the SDP checks, browser adapters for the peer connection
+  and the microphone, and the binding port's types, behind a new door `@masia/messenger/call`; the
+  `call:*` wire contract and the verification tag into `@masia/contracts/wire`. The machine, SDP, wire and browser-adapter tests moved with them; the engine's own suites and the speaker
+  adapter stayed in the first host. A
+  new page, [`calls.md`](calls.md), says what the engine guarantees and which ports a host must provide.
+- **Why.** The calls work in the first host, and the engine was already written on ports with no framework, so
+  it could be moved as it is. The repository's README said calls were not here.
+- **Files.** `src/call/` · `src/state-machine/` · `../contracts/src/wire/` · `calls.md` · `context.md` ·
+  `ARCHITECTURE.md` · `../README.md`.
+- **Decision.** A move with no change of behaviour. Signalling, TURN credentials, the binding to a live MLS room,
+  the call screen and the rules on who may call whom stay with the host. Signalling through the relay was not
+  taken: the first host's decision record rejected it (ringing would lag by the relay's poll interval, and a live
+  channel is a second realtime transport to secure), and changing that needs a decision record of its own.
+- **Next.** Signals through the relay, a call between the playground's two tabs, and a call screen in the
+  package, after that decision and a security review (context, next step 5).
+
 ## 2026-11-20 · The state page is brought up to date with the code
 
 - **What.** `context.md` rewritten from "State as of 2026-11-07" to 2026-11-20, every line checked against the

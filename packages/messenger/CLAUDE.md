@@ -22,6 +22,7 @@ not only the code. Today it is pre-1.0 and partly built; [`docs/context.md`](doc
 | What we learned (rules, one to three lines each) · the full cases | [`docs/experience.md`](docs/experience.md) · [`docs/experience-archive.md`](docs/experience-archive.md) |
 | Chronology of decisions and steps (what / why / files / decision / next) | [`docs/log.md`](docs/log.md) |
 | Releases | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) |
+| The one-to-one audio call engine (`@masia/messenger/call`): its guarantees and the ports a host provides | [`docs/calls.md`](docs/calls.md) |
 | The ports and their contract suites | `../contracts/src/ports` · `../contracts/src/contract-tests` |
 
 **Read order for a new session:** this file, then `docs/context.md`, then `docs/canon.md` for the area you touch.
